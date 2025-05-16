@@ -104,7 +104,7 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
 
         if (Common::getRequestVar('submitted', '', 'string') === 'true') {
             // Process form submission
-            $this->processEventCategoriesFormSubmission($settings);
+            $this->processEventFormSubmission($settings);  // FIXED: Changed method name to match implementation
 
             // Redirect to prevent form resubmission
             $params = [
@@ -184,10 +184,11 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
     }
 
     /**
-     * Process form submission for event category settings
+     * Process form submission for event settings
      */
-    private function processEventCategoriesFormSubmission($settings)
+    private function processEventFormSubmission($settings)
     {
+        // Process event categories
         $eventCategories = Common::getRequestVar('eventCategories', [], 'array');
 
         // Update each event category setting
@@ -195,6 +196,15 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
             if (isset($settings->eventCategories[$eventType])) {
                 $settings->eventCategories[$eventType]->setValue(trim($categoryName));
             }
+        }
+
+        // Process Event ID settings
+        $eventIdSource = Common::getRequestVar('event_id_source', 'event_name', 'string');
+        $settings->eventIdSource->setValue($eventIdSource);
+
+        if ($eventIdSource === 'custom_dimension') {
+            $dimensionIndex = Common::getRequestVar('event_id_custom_dimension', '', 'string');
+            $settings->eventIdCustomDimension->setValue($dimensionIndex);
         }
 
         // Save all settings

@@ -11,7 +11,7 @@
                 </a>
             </div>
             <div class="settings-title-container">
-                <h1 class="settings-title">Event Category Mappings</h1>
+                <h1 class="settings-title">Event Configuration</h1>
                 <div class="site-identifier">
                     <span class="icon-website"></span>
                     <span class="site-name">{{ siteName }}</span>
@@ -23,13 +23,70 @@
     <div class="settings-content">
         {% if updated is defined and updated %}
             <div piwik-notification context="success">
-                Event mappings successfully saved.
+                Event configuration successfully saved.
             </div>
         {% endif %}
 
-        <form method="post" action="{{ linkTo({module: 'ConversionApi', action: 'siteEventSettings', idSite: idSite}) }}" id="eventMappingsForm">
+        <form method="post" action="{{ linkTo({module: 'ConversionApi', action: 'siteEventSettings', idSite: idSite}) }}" id="eventSettingsForm">
             <input type="hidden" name="submitted" value="true" />
 
+            <!-- Event ID Configuration Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Event ID Configuration</h3>
+                </div>
+                <div class="card-content">
+                    <p class="description">Configure where to retrieve the Event ID from when sending events to advertising platforms.</p>
+
+                    <div class="form-group">
+                        <label class="form-group-label">Event ID Source</label>
+                        <div class="radio-options">
+                            <div class="radio-option">
+                                <input type="radio"
+                                       id="event_id_source_event_name"
+                                       name="event_id_source"
+                                       value="event_name"
+                                       {% if settings.eventIdSource.getValue() == 'event_name' or settings.eventIdSource.getValue() is empty %}checked{% endif %} />
+                                <label for="event_id_source_event_name">Use Event Name</label>
+                                <div class="radio-help">The event name will be used as the Event ID</div>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio"
+                                       id="event_id_source_custom_dimension"
+                                       name="event_id_source"
+                                       value="custom_dimension"
+                                       {% if settings.eventIdSource.getValue() == 'custom_dimension' %}checked{% endif %} />
+                                <label for="event_id_source_custom_dimension">Use Custom Dimension</label>
+                                <div class="radio-help">A specific custom dimension will be used as the Event ID</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="custom_dimension_container" class="form-group" {% if settings.eventIdSource.getValue() != 'custom_dimension' %}style="display: none;"{% endif %}>
+                        <label for="event_id_custom_dimension">Custom Dimension Index</label>
+                        <div class="form-input-container">
+                            <input type="number"
+                                   id="event_id_custom_dimension"
+                                   name="event_id_custom_dimension"
+                                   class="form-control"
+                                   min="1"
+                                   value="{{ settings.eventIdCustomDimension.getValue() }}" />
+                            <div class="form-text text-muted">Enter the index of the action-scoped custom dimension that contains the Event ID</div>
+                        </div>
+                    </div>
+
+                    <div class="form-info">
+                        <h5>About Event IDs</h5>
+                        <p>Event IDs are used to prevent duplicate event submissions to advertising platforms. Choose where Matomo should look for this value:</p>
+                        <ul>
+                            <li><strong>Event Name</strong>: Use the Matomo event name field (recommended for most setups)</li>
+                            <li><strong>Custom Dimension</strong>: Use a specific action-scoped custom dimension if you store unique identifiers there</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Category Mappings Section -->
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Event Category Mappings</h3>
@@ -264,6 +321,77 @@
             background-color: #fff;
         }
 
+        /* Form Group and Radio Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group-label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .radio-options {
+            margin-top: 10px;
+        }
+
+        .radio-option {
+            margin-bottom: 12px;
+            padding: 10px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .radio-option:hover {
+            background-color: #f9f9f9;
+        }
+
+        .radio-option input[type="radio"] {
+            margin-right: 8px;
+        }
+
+        .radio-option label {
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .radio-help {
+            margin-left: 22px;
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 3px;
+        }
+
+        .form-input-container {
+            max-width: 300px;
+        }
+
+        .form-text {
+            margin-top: 5px;
+            font-size: 0.85em;
+            color: #777;
+        }
+
+        .form-info {
+            margin-top: 20px;
+            background-color: #f7f7f7;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #1E66FF;
+        }
+
+        .form-info h5 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .form-info ul {
+            margin-bottom: 0;
+            padding-left: 20px;
+        }
+
         /* Form Table Layout */
         .form-table {
             width: 100%;
@@ -431,6 +559,15 @@
 
     <script>
         $(document).ready(function() {
+            // Toggle custom dimension field visibility
+            $('input[name="event_id_source"]').on('change', function() {
+                if ($(this).val() === 'custom_dimension') {
+                    $('#custom_dimension_container').show();
+                } else {
+                    $('#custom_dimension_container').hide();
+                }
+            });
+
             // Add data-label attributes for responsive display
             function updateDataLabels() {
                 $('.mapping-row').each(function() {

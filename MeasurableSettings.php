@@ -57,8 +57,32 @@ class MeasurableSettings extends \Piwik\Settings\Measurable\MeasurableSettings
     /** @var array of Setting objects */
     public $visitDimensions = [];
 
+    // Visit dimension variables
+    private $visitVariables = [
+        'userAgent',
+        'emailValue',
+        'nameValue',
+        'phoneValue',
+        'klaroCookie',
+        '_fbc',
+        '_fbp',
+        'gclid'
+    ];
+
     /** @var array of Setting objects */
     public $actionDimensions = [];
+
+    // Action dimension variables - empty for now, but prepared for future
+    private $actionVariables = [];
+
+    /** @var Setting Setting for event ID source */
+    public $eventIdSource;
+
+    /** @var Setting Setting for event ID custom dimension*/
+    public $eventIdCustomDimension;
+
+    /** @var array of Setting objects */
+    public $eventCategories = [];
 
     /** @var array Standard event mappings - these are hardcoded */
     private $standardEventNames = [
@@ -83,24 +107,6 @@ class MeasurableSettings extends \Piwik\Settings\Measurable\MeasurableSettings
             'linkedin' => 'JobApply'
         ]
     ];
-
-    /** @var array Settings for event categories */
-    public $eventCategories = [];
-
-    // Visit dimension variables
-    private $visitVariables = [
-        'userAgent',
-        'emailValue',
-        'nameValue',
-        'phoneValue',
-        'klaroCookie',
-        '_fbc',
-        '_fbp',
-        'gclid'
-    ];
-
-    // Action dimension variables - empty for now, but prepared for future
-    private $actionVariables = [];
 
     protected function init()
     {
@@ -129,7 +135,9 @@ class MeasurableSettings extends \Piwik\Settings\Measurable\MeasurableSettings
         // Initialize Custom Dimension Settings
         $this->initDimensionSettings();
 
-        // Initialize Event Category Settings
+        // Initialize Event Settings
+        $this->eventIdSource = $this->makeEventIdSourceSetting();
+        $this->eventIdCustomDimension = $this->makeEventIdCustomDimensionSetting();
         $this->initEventCategorySettings();
     }
 
@@ -374,7 +382,19 @@ class MeasurableSettings extends \Piwik\Settings\Measurable\MeasurableSettings
         return $mappings;
     }
 
-    // Meta Settings
+    public function getEventIdConfiguration()
+    {
+        $source = $this->eventIdSource->getValue();
+        $config = ['source' => $source];
+
+        if ($source === 'custom_dimension') {
+            $config['dimension_index'] = (int)$this->eventIdCustomDimension->getValue();
+        }
+
+        return $config;
+    }
+
+    // MAKE SETTINS
     private function makeMetaPixelIdSetting()
     {
         return $this->makeSetting('meta_pixel_id', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
@@ -542,5 +562,45 @@ class MeasurableSettings extends \Piwik\Settings\Measurable\MeasurableSettings
             $field->description = 'Automatically sync visit data to LinkedIn Conversions API';
             $field->uiControl = FieldConfig::UI_CONTROL_CHECKBOX;
         });
+    }
+
+    private function makeEventIdSourceSetting()
+    {
+        return $this->makeSetting(
+            'event_id_source',
+            'event_name', // Default: use event name
+            FieldConfig::TYPE_STRING,
+            function (FieldConfig $field) {
+                $field->title = 'Event ID Source';
+                $field->description = 'Select where to retrieve the Event ID from';
+                $field->uiControl = FieldConfig::UI_CONTROL_RADIO;
+                $field->availableValues = [
+                    'event_name' => 'Event Name',
+                    'custom_dimension' => 'Custom Dimension'
+                ];
+                $field->inlineHelp = 'Choose whether to use the Event Name field or a specific Custom Dimension as the Event ID';
+            }
+        );
+    }
+
+    private function makeEventIdCustomDimensionSetting()
+    {
+        return $this->makeSetting(
+            'event_id_custom_dimension',
+            '',
+            FieldConfig::TYPE_INT,
+            function (FieldConfig $field) {
+                $field->title = 'Event ID Custom Dimension';
+                $field->description = 'Custom Dimension index to use as Event ID';
+                $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
+                $field->inlineHelp = 'Enter the index of the action-scoped custom dimension that contains the Event ID';
+                $field->condition = 'event_id_source == "custom_dimension"';
+                $field->validate = function ($value) {
+                    if (!empty($value) && (!is_numeric($value) || $value < 1)) {
+                        throw new \Exception('Custom Dimension index must be a positive number');
+                    }
+                };
+            }
+        );
     }
 }
