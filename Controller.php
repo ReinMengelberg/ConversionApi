@@ -23,7 +23,7 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
         ]);
     }
 
-    public function siteSettings()
+    public function siteApiSettings()
     {
         $idSite = Common::getRequestVar('idSite', null, 'int');
         Piwik::checkUserHasAdminAccess($idSite);
@@ -39,7 +39,7 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
             // Redirect to prevent form resubmission
             $params = [
                 'module' => 'ConversionApi',
-                'action' => 'siteSettings',
+                'action' => 'siteApiSettings',
                 'idSite' => $idSite,
                 'updated' => 1
             ];
@@ -50,7 +50,42 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
         }
 
         // Render the settings form
-        return $this->renderTemplate('siteSettings', [
+        return $this->renderTemplate('siteApiSettings', [
+            'settings' => $settings,
+            'idSite' => $idSite,
+            'siteName' => Site::getNameFor($idSite),
+            'updated' => Common::getRequestVar('updated', 0, 'int')
+        ]);
+    }
+
+    public function siteDimensionsSettings()
+    {
+        $idSite = Common::getRequestVar('idSite', null, 'int');
+        Piwik::checkUserHasAdminAccess($idSite);
+
+        // Get settings for this specific site
+        $settingsProvider = StaticContainer::get('Piwik\Plugin\SettingsProvider');
+        $settings = $settingsProvider->getMeasurableSettings('ConversionApi', $idSite);
+
+        if (Common::getRequestVar('submitted', '', 'string') === 'true') {
+            // Process form submission
+            $this->processDimensionsFormSubmission($settings);
+
+            // Redirect to prevent form resubmission
+            $params = [
+                'module' => 'ConversionApi',
+                'action' => 'siteDimensionsSettings',
+                'idSite' => $idSite,
+                'updated' => 1
+            ];
+
+            // Use standard PHP function
+            $url = 'index.php?' . http_build_query($params);
+            Url::redirectToUrl($url);
+        }
+
+        // Render the settings form
+        return $this->renderTemplate('siteDimensionsSettings', [
             'settings' => $settings,
             'idSite' => $idSite,
             'siteName' => Site::getNameFor($idSite),
@@ -81,6 +116,34 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
         $settings->linkedinAdAccountUrn->setValue(Common::getRequestVar('linkedin_ad_account_id', '', 'string'));
         $settings->linkedinApiVersion->setValue(Common::getRequestVar('linkedin_api_version', '202404', 'string'));
         $settings->linkedinSyncVisits->setValue((bool)Common::getRequestVar('linkedin_sync_visits', 0, 'int'));
+
+        // Save all settings
+        $settings->save();
+    }
+
+    private function processDimensionsFormSubmission($settings)
+    {
+        // Process Visit Dimensions
+        if ($visitDimensions = Common::getRequestVar('visit_dimensions', [], 'array')) {
+            foreach ($visitDimensions as $variable => $dimensionIndex) {
+                $settingName = 'visit_dim_' . $variable;
+                // Only set if the setting exists
+                if (isset($settings->visitDimensions[$variable])) {
+                    $settings->visitDimensions[$variable]->setValue($dimensionIndex);
+                }
+            }
+        }
+
+        // Process Action Dimensions
+        if ($actionDimensions = Common::getRequestVar('action_dimensions', [], 'array')) {
+            foreach ($actionDimensions as $variable => $dimensionIndex) {
+                $settingName = 'action_dim_' . $variable;
+                // Only set if the setting exists
+                if (isset($settings->actionDimensions[$variable])) {
+                    $settings->actionDimensions[$variable]->setValue($dimensionIndex);
+                }
+            }
+        }
 
         // Save all settings
         $settings->save();

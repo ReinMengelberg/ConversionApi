@@ -1,0 +1,493 @@
+{# plugins/ConversionApi/templates/siteDimensionsSettings.twig #}
+{% extends 'admin.twig' %}
+
+{% block content %}
+    <div class="settings-header">
+        <div class="settings-header-container">
+            <div class="settings-breadcrumb">
+                <a href="{{ linkTo({module: 'ConversionApi', action: 'index'}) }}" class="btn-back">
+                    <span class="icon-arrow-left"></span>
+                    <span>Back to Sites</span>
+                </a>
+            </div>
+            <div class="settings-title-container">
+                <h1 class="settings-title">Custom Dimensions Configuration</h1>
+                <div class="site-identifier">
+                    <span class="icon-website"></span>
+                    <span class="site-name">{{ siteName }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-content">
+        {% if updated is defined and updated %}
+            <div piwik-notification context="success">
+                Custom dimensions mapping successfully saved.
+            </div>
+        {% endif %}
+
+        <form method="post" action="{{ linkTo({module: 'ConversionApi', action: 'siteDimensionsSettings', idSite: idSite}) }}" id="customDimensionsForm">
+            <input type="hidden" name="submitted" value="true" />
+
+            <!-- Visit Dimensions Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Visit Scope Dimensions</h3>
+                </div>
+                <div class="card-content">
+                    <p class="description">Map predefined variables to visit-scope custom dimension indexes</p>
+
+                    <div class="form-table">
+                        <div class="form-table-header">
+                            <div class="form-table-cell form-label-cell">Variable Name</div>
+                            <div class="form-table-cell">Dimension Index</div>
+                        </div>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
+                                <label for="userAgent_dimension">User Agent</label>
+                                <div class="form-help">Browser and device information from visitors</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="userAgent_dimension"
+                                       name="visit_dimensions[userAgent]"
+                                       class="form-control"
+                                       min="1"
+                                       value="{{ settings.visitDimensions['userAgent'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
+                                <label for="emailValue_dimension">Email Value</label>
+                                <div class="form-help">Email address captured from forms or user input</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="emailValue_dimension"
+                                       name="visit_dimensions[emailValue]"
+                                       class="form-control"
+                                       min="1"
+                                       value="{{ settings.visitDimensions['emailValue'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
+                                <label for="nameValue_dimension">Name Value</label>
+                                <div class="form-help">User's name captured from forms or user input</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="nameValue_dimension"
+                                       name="visit_dimensions[nameValue]"
+                                       class="form-control"
+                                       min="1"
+                                       value="{{ settings.visitDimensions['nameValue'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
+                                <label for="phoneValue_dimension">Phone Value</label>
+                                <div class="form-help">Phone number captured from forms or user input</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="phoneValue_dimension"
+                                       name="visit_dimensions[phoneValue]"
+                                       class="form-control"
+                                       min="1"
+                                       value="{{ settings.visitDimensions['phoneValue'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
+                                <label for="klaroCookie_dimension">Klaro Cookie</label>
+                                <div class="form-help">Klaro consent management cookie value</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="klaroCookie_dimension"
+                                       name="visit_dimensions[klaroCookie]"
+                                       class="form-control"
+                                       min="1"
+                                       value="{{ settings.visitDimensions['klaroCookie'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
+                                <label for="fbc_dimension">Facebook Click ID (_fbc)</label>
+                                <div class="form-help">Facebook click identifier for ad attribution</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="fbc_dimension"
+                                       name="visit_dimensions[_fbc]"
+                                       class="form-control"
+                                       min="1"
+                                       value="{{ settings.visitDimensions['_fbc'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
+                                <label for="fbp_dimension">Facebook Browser ID (_fbp)</label>
+                                <div class="form-help">Facebook browser identifier for cross-site tracking</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="fbp_dimension"
+                                       name="visit_dimensions[_fbp]"
+                                       class="form-control"
+                                       min="1"
+                                       value="{{ settings.visitDimensions['_fbp'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
+                                <label for="gclid_dimension">Google Click ID (gclid)</label>
+                                <div class="form-help">Google Click ID for AdWords campaign tracking</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="gclid_dimension"
+                                       name="visit_dimensions[gclid]"
+                                       class="form-control"
+                                       min="1"
+                                       value="{{ settings.visitDimensions['gclid'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Dimensions Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Action Scope Dimensions</h3>
+                </div>
+                <div class="card-content">
+                    <p class="description">Map predefined variables to action-scope custom dimension indexes</p>
+
+                    <div class="alert alert-info">
+                        <p>No action scope variables are currently defined. This section is prepared for future use.</p>
+                    </div>
+
+                    {# Uncomment and modify when needed for action dimensions
+                    <div class="form-table">
+                        <div class="form-table-header">
+                            <div class="form-table-cell form-label-cell">Variable Name</div>
+                            <div class="form-table-cell">Dimension Index</div>
+                        </div>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
+                                <label for="example_action_dimension">Example Action Variable</label>
+                                <div class="form-help">Description of this action variable</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="example_action_dimension"
+                                       name="action_dimensions[exampleVar]"
+                                       class="form-control"
+                                       min="1"
+                                       value="{{ settings.actionDimensions['exampleVar'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+                    </div>
+                    #}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <input type="submit" class="btn btn-primary" value="Save Changes" />
+                <a href="{{ linkTo({module: 'ConversionApi', action: 'index'}) }}" class="btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <style>
+        /* Header and Navigation Styles */
+        .settings-header {
+            background: linear-gradient(to right, #2C3E50, #4CA1AF);
+            color: #fff;
+            padding: 0;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .settings-header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .settings-breadcrumb {
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+
+        .btn-back {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+            padding: 6px 12px;
+            width: fit-content;
+        }
+
+        .btn-back:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .btn-back .icon-arrow-left {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .settings-title-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+        }
+
+        .settings-title {
+            font-size: 24px;
+            font-weight: 500;
+            margin: 0;
+            color: #fff;
+        }
+
+        .site-identifier {
+            display: flex;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+
+        .site-identifier .icon-website {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .site-name {
+            font-weight: 500;
+        }
+
+        .settings-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Card Styles */
+        .card {
+            border: none;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-header {
+            background-color: #f9f9f9;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .card-content {
+            padding: 20px;
+            background-color: #fff;
+        }
+
+        /* Form Table Layout */
+        .form-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .form-table-header {
+            display: flex;
+            background-color: #f5f5f5;
+            font-weight: 600;
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+
+        .form-table-row {
+            display: flex;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+
+        .form-table-row:last-child {
+            border-bottom: none;
+        }
+
+        .form-table-row:hover {
+            background-color: #f9f9f9;
+        }
+
+        .form-table-cell {
+            padding: 12px 15px;
+            flex: 1;
+        }
+
+        .form-label-cell {
+            flex: 0 0 70%;
+            padding-right: 25px;
+        }
+
+        .form-label-cell label {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .form-help {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: #1E66FF;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(30, 102, 255, 0.2);
+        }
+
+        /* Form Action Styles */
+        .form-actions {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            border: 1px solid #ddd;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .btn:hover {
+            background-color: #e5e5e5;
+            border-color: #ccc;
+        }
+
+        .btn-primary {
+            background-color: #1E66FF;
+            border-color: #1E66FF;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: #0047E1;
+            border-color: #0047E1;
+            color: #fff;
+        }
+
+        .description {
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        .alert-info {
+            background-color: #f0f7fd;
+            border-color: #d0e3f0;
+            color: #31708f;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .settings-title-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .site-identifier {
+                margin-top: 10px;
+            }
+
+            .settings-title {
+                font-size: 20px;
+            }
+
+            .form-table-row,
+            .form-table-header {
+                flex-direction: column;
+            }
+
+            .form-table-cell,
+            .form-label-cell {
+                flex: 1 1 auto;
+                padding: 8px 12px;
+            }
+
+            .form-label-cell {
+                background-color: #f9f9f9;
+                border-radius: 4px 4px 0 0;
+                padding-bottom: 5px;
+            }
+
+            .form-table-row {
+                margin-bottom: 15px;
+                border: 1px solid #eee;
+                border-radius: 4px;
+                overflow: hidden;
+            }
+        }
+    </style>
+{% endblock %}

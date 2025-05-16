@@ -54,6 +54,27 @@ class MeasurableSettings extends \Piwik\Settings\Measurable\MeasurableSettings
     /** @var Setting */
     public $linkedinSyncVisits;
 
+    /** @var array of Setting objects */
+    public $visitDimensions = [];
+
+    /** @var array of Setting objects */
+    public $actionDimensions = [];
+
+    // Visit dimension variables
+    private $visitVariables = [
+        'userAgent',
+        'emailValue',
+        'nameValue',
+        'phoneValue',
+        'klaroCookie',
+        '_fbc',
+        '_fbp',
+        'gclid'
+    ];
+
+    // Action dimension variables - empty for now, but prepared for future
+    private $actionVariables = [];
+
     protected function init()
     {
         // Meta settings
@@ -77,6 +98,146 @@ class MeasurableSettings extends \Piwik\Settings\Measurable\MeasurableSettings
         $this->linkedinAdAccountUrn = $this->makeLinkedinAdAccountUrnSetting();
         $this->linkedinApiVersion = $this->makeLinkedinApiVersionSetting();
         $this->linkedinSyncVisits = $this->makeLinkedinSyncVisitsSetting();
+
+        // Initialize Custom Dimension Settings
+        $this->initDimensionSettings();
+    }
+
+    /**
+     * Initialize custom dimension settings
+     */
+    private function initDimensionSettings()
+    {
+        // Initialize Visit Dimension Settings
+        foreach ($this->visitVariables as $variable) {
+            $this->visitDimensions[$variable] = $this->createVisitDimensionSetting($variable);
+        }
+
+        // Initialize Action Dimension Settings - prepared for future
+        foreach ($this->actionVariables as $variable) {
+            $this->actionDimensions[$variable] = $this->createActionDimensionSetting($variable);
+        }
+    }
+
+    /**
+     * Create a setting for visit dimension
+     */
+    private function createVisitDimensionSetting($variable)
+    {
+        $title = $this->getVariableTitle($variable);
+        $description = $this->getVariableDescription($variable);
+
+        return $this->makeSetting(
+            'visit_dim_' . $variable,
+            '',
+            FieldConfig::TYPE_INT,
+            function (FieldConfig $field) use ($title, $description) {
+                $field->title = $title;
+                $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
+                $field->description = "Maps $title to a custom dimension index";
+                $field->inlineHelp = $description;
+                $field->validate = function ($value) {
+                    if (!empty($value) && (!is_numeric($value) || $value < 1)) {
+                        throw new \Exception('Dimension index must be a positive number');
+                    }
+                };
+            }
+        );
+    }
+
+    /**
+     * Create a setting for action dimension
+     */
+    private function createActionDimensionSetting($variable)
+    {
+        $title = $this->getVariableTitle($variable);
+        $description = $this->getVariableDescription($variable);
+
+        return $this->makeSetting(
+            'action_dim_' . $variable,
+            '',
+            FieldConfig::TYPE_INT,
+            function (FieldConfig $field) use ($title, $description) {
+                $field->title = $title;
+                $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
+                $field->description = "Maps $title to a custom dimension index";
+                $field->inlineHelp = $description;
+                $field->validate = function ($value) {
+                    if (!empty($value) && (!is_numeric($value) || $value < 1)) {
+                        throw new \Exception('Dimension index must be a positive number');
+                    }
+                };
+            }
+        );
+    }
+
+    /**
+     * Get human-readable title for a variable
+     */
+    private function getVariableTitle($variable)
+    {
+        $titles = [
+            'userAgent' => 'User Agent',
+            'emailValue' => 'Email Value',
+            'nameValue' => 'Name Value',
+            'phoneValue' => 'Phone Value',
+            'klaroCookie' => 'Klaro Cookie',
+            '_fbc' => 'Facebook Click ID (_fbc)',
+            '_fbp' => 'Facebook Browser ID (_fbp)',
+            'gclid' => 'Google Click ID (gclid)',
+            // Add more as needed
+        ];
+
+        return isset($titles[$variable]) ? $titles[$variable] : $variable;
+    }
+
+    /**
+     * Get description for a variable
+     */
+    private function getVariableDescription($variable)
+    {
+        $descriptions = [
+            'userAgent' => 'User agent string from the visitor\'s browser',
+            'emailValue' => 'Email address captured from forms or user input',
+            'nameValue' => 'User\'s name captured from forms or user input',
+            'phoneValue' => 'Phone number captured from forms or user input',
+            'klaroCookie' => 'Klaro consent management cookie value',
+            '_fbc' => 'Facebook click identifier for ad attribution',
+            '_fbp' => 'Facebook browser identifier for cross-site tracking',
+            'gclid' => 'Google Click ID for AdWords campaign tracking',
+            // Add more as needed
+        ];
+
+        return isset($descriptions[$variable]) ? $descriptions[$variable] : '';
+    }
+
+    /**
+     * Get all dimension mappings in a format ready for tracking
+     */
+    public function getDimensionMappings()
+    {
+        $mappings = [
+            'visit' => [],
+            'action' => []
+        ];
+
+        // Process visit dimensions
+        foreach ($this->visitDimensions as $variable => $setting) {
+            $value = $setting->getValue();
+            if (!empty($value)) {
+                $mappings['visit'][$variable] = (int)$value;
+            }
+        }
+
+        // Process action dimensions
+        foreach ($this->actionDimensions as $variable => $setting) {
+            $value = $setting->getValue();
+            if (!empty($value)) {
+                $mappings['action'][$variable] = (int)$value;
+            }
+        }
+
+        return $mappings;
     }
 
     // Meta Settings

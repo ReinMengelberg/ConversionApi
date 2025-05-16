@@ -184,7 +184,6 @@ class VisitDataService
             return [];
         }
     }
-
     /**
      * Get a batch of visits using pagination
      *
@@ -209,6 +208,16 @@ class VisitDataService
 
         try {
             $visits = Request::processRequest('Live.getLastVisitsDetails', $params);
+
+            // Fix: Convert DataTable to array if needed
+            if ($visits instanceof \Piwik\DataTable) {
+                $visitsArray = [];
+                foreach ($visits->getRows() as $row) {
+                    $visitsArray[] = $row->getColumns();
+                }
+                $visits = $visitsArray;
+            }
+
             $visits = array_filter($visits, function ($visit) use ($startDate, $endDate) {
                 $visitTime = Date::factory($visit['lastActionTimestamp'] ?? $visit['firstActionTimestamp']);
                 return $visitTime->isLater($startDate) && $visitTime->isEarlier($endDate);

@@ -15,6 +15,7 @@ use Piwik\Plugins\ConversionApi\MeasurableSettings;
 use Piwik\Plugins\ConversionApi\Services\Processors\GoogleProcessor;
 use Piwik\Plugins\ConversionApi\Services\Processors\LinkedinProcessor;
 use Piwik\Plugins\ConversionApi\Services\Processors\MetaProcessor;
+use Piwik\Plugins\ConversionApi\Services\Visits\VisitExpandService;
 use Piwik\Plugins\ConversionApi\Services\Visits\VisitHashService;
 use Piwik\Plugins\ConversionApi\Services\Visits\VisitDataService;
 
@@ -23,57 +24,39 @@ use Piwik\Plugins\ConversionApi\Services\Visits\VisitDataService;
  */
 class ConversionApiManager
 {
-    /**
-     * @var VisitDataService
-     */
-    private $visitDataService;
-
-    /**
-     * @var VisitHashService
-     */
-    private $visitHashService;
-
-    /**
-     * @var LoggerInterface
-     */
     private $logger;
-
-    /**
-     * @var MetaProcessor
-     */
+    private $visitDataService;
+    private $visitHashService;
+    private $visitExpandService;
     private $metaProcessor;
-
-    /**
-     * @var GoogleProcessor
-     */
     private $googleProcessor;
-
-    /**
-     * @var LinkedinProcessor
-     */
     private $linkedinProcessor;
+
 
     /**
      * Constructor
      *
-     * @param VisitDataService $visitDataService
-     * @param VisitHashService $visitHashService
      * @param LoggerInterface $logger
+     * @param VisitDataService $visitDataService
+     * @param VisitExpandService $visitExpandService
+     * @param VisitHashService $visitHashService
      * @param MetaProcessor $metaProcessor
      * @param GoogleProcessor $googleProcessor
      * @param LinkedinProcessor $linkedinProcessor
      */
     public function __construct(
-        VisitDataService  $visitDataService,
-        VisitHashService  $visitHashService,
-        LoggerInterface   $logger,
-        MetaProcessor     $metaProcessor,
-        GoogleProcessor   $googleProcessor,
-        LinkedinProcessor $linkedinProcessor
+        LoggerInterface    $logger,
+        VisitDataService   $visitDataService,
+        VisitExpandService $visitExpandService,
+        VisitHashService   $visitHashService,
+        MetaProcessor      $metaProcessor,
+        GoogleProcessor    $googleProcessor,
+        LinkedinProcessor  $linkedinProcessor
     ) {
-        $this->visitDataService = $visitDataService;
-        $this->visitHashService = $visitHashService;
         $this->logger = $logger;
+        $this->visitDataService = $visitDataService;
+        $this->visitExpandService = $visitExpandService;
+        $this->visitHashService = $visitHashService;
         $this->metaProcessor = $metaProcessor;
         $this->googleProcessor = $googleProcessor;
         $this->linkedinProcessor = $linkedinProcessor;
@@ -125,25 +108,62 @@ class ConversionApiManager
             return;
         }
 
+        $this->logger->info('ConversionApi: Found {count} visits for site {idSite}', [
+            'count' => count($visitData),
+            'idSite' => $idSite
+        ]);
+
+        // Logging function
+        if (isset($visitData[0])) {
+            $firstVisit = $visitData[0];
+
+            // Sanitize function
+            $sanitize = function($data) use (&$sanitize) {
+                if (is_string($data)) {
+                    // Fix malformed UTF-8 characters
+                    return mb_convert_encoding($data, 'UTF-8', 'UTF-8');
+                }
+                if (is_array($data)) {
+                    $result = [];
+                    foreach ($data as $key => $value) {
+                        // Also sanitize keys if they're strings
+                        $sanitizedKey = is_string($key) ? mb_convert_encoding($key, 'UTF-8', 'UTF-8') : $key;
+                        $result[$sanitizedKey] = $sanitize($value);
+                    }
+                    return $result;
+                }
+                return $data;
+            };
+
+            $sanitizedVisit = $sanitize($firstVisit);
+            $jsonContent = json_encode($sanitizedVisit, JSON_PRETTY_PRINT);
+            $debugFile = PIWIK_DOCUMENT_ROOT . '/tmp/visit_debug_simple.json';
+            file_put_contents($debugFile, $jsonContent);
+            $this->logger->info('ConversionApi: DEBUG - Visit structure written to ' . $debugFile);
+        }
+
+        // Pre-process data with expanding service
+//        $expandedData = $this->visitExpandService->expandVisits($visitData);
+
         // Pre-process data with hashing service
-        $hashedData = $this->visitHashService->hashVisits($visitData, $idSite);
+//        $hashedData = $this->visitHashService->hashVisits($expandedData, $idSite);
 
         // Process Meta if enabled
-        try {
-            if ($settings->metaSyncVisits->getValue() && $this->isMetaEnabled($settings)) {
-                $this->processMetaVisits($idSite, $hashedData, $settings);
-            }
-        } catch (MissingConfigurationException $e) {
-            $this->logger->warning('ConversionApi: {message} for site {idSite}. Skipping Meta integration.', [
-                'message' => $e->getMessage(),
-                'idSite' => $idSite
-            ]);
-        } catch (\Exception $e) {
-            $this->logger->error('ConversionApi: Error processing Meta integration for site {idSite}: {message}. Continuing with other integrations.', [
-                'idSite' => $idSite,
-                'message' => $e->getMessage()
-            ]);
-        }
+//        try {
+//            if ($settings->metaSyncVisits->getValue() && $this->isMetaEnabled($settings)) {
+//                $this->processMetaVisits($idSite, $hashedData, $settings);
+//            }
+//        } catch (MissingConfigurationException $e) {
+//            $this->logger->warning('ConversionApi: {message} for site {idSite}. Skipping Meta integration.', [
+//                'message' => $e->getMessage(),
+//                'idSite' => $idSite
+//            ]);
+//        } catch (\Exception $e) {
+//            $this->logger->error('ConversionApi: Error processing Meta integration for site {idSite}: {message}. Continuing with other integrations.', [
+//                'idSite' => $idSite,
+//                'message' => $e->getMessage()
+//            ]);
+//        }
 
         // Process Google if enabled
         try {

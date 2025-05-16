@@ -1,3 +1,4 @@
+
 {# plugins/ConversionApi/templates/index.twig #}
 {% extends 'admin.twig' %}
 
@@ -35,11 +36,18 @@
                                     </div>
                                 </td>
                                 <td class="text-right">
-                                    <a href="{{ linkTo({module: 'ConversionApi', action: 'siteSettings', idSite: site.idsite}) }}"
-                                       class="btn-action">
-                                        <span>Configure</span>
-                                        <span class="icon-arrow-right"></span>
-                                    </a>
+                                    <div class="action-buttons">
+                                        <a href="{{ linkTo({module: 'ConversionApi', action: 'siteApiSettings', idSite: site.idsite}) }}"
+                                           class="btn-action">
+                                            <span>API Settings</span>
+                                            <span class="icon-arrow-right"></span>
+                                        </a>
+                                        <a href="{{ linkTo({module: 'ConversionApi', action: 'siteDimensionsSettings', idSite: site.idsite}) }}"
+                                           class="btn-action btn-dimensions">
+                                            <span>Custom Dimensions</span>
+                                            <span class="icon-arrow-right"></span>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -182,6 +190,12 @@
             color: #333;
         }
 
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
         .btn-action {
             display: inline-flex;
             align-items: center;
@@ -196,6 +210,14 @@
 
         .btn-action:hover {
             background-color: #0047E1;
+        }
+
+        .btn-dimensions {
+            background-color: #34A853;
+        }
+
+        .btn-dimensions:hover {
+            background-color: #2C8C45;
         }
 
         .btn-action span {
@@ -226,6 +248,16 @@
             .dataTable th,
             .dataTable td {
                 padding: 10px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .btn-action {
+                width: 100%;
+                justify-content: space-between;
             }
         }
     </style>
