@@ -1,0 +1,389 @@
+{# plugins/ConversionApi/templates/siteConsentSettings.twig #}
+{% extends 'admin.twig' %}
+
+{% block content %}
+    <div class="settings-header">
+        <div class="settings-header-container">
+            <div class="settings-breadcrumb">
+                <a href="{{ linkTo({module: 'ConversionApi', action: 'index'}) }}" class="btn-back">
+                    <span class="icon-arrow-left"></span>
+                    <span>Back to Overview</span>
+                </a>
+            </div>
+            <div class="settings-title-container">
+                <h1 class="settings-title">Consent Configuration</h1>
+                <div class="site-identifier">
+                    <span class="icon-website"></span>
+                    <span class="site-name">{{ siteName }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-content">
+        {% if updated is defined and updated %}
+            <div piwik-notification context="success">
+                Consent configuration successfully saved.
+            </div>
+        {% endif %}
+
+        <form method="post" action="{{ linkTo({module: 'ConversionApi', action: 'siteConsentSettings', idSite: idSite}) }}" id="consentSettingsForm">
+            <input type="hidden" name="submitted" value="true" />
+
+            <!-- Klaro Cookie Dimension Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Klaro Cookie Dimension</h3>
+                </div>
+                <div class="card-content">
+                    <p class="description">Configure the custom dimension used to store Klaro consent data.</p>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">Dimension Index</label>
+                        <div class="col-sm-9">
+                            <input type="number"
+                                   id="klaro_cookie_dimension"
+                                   name="klaro_cookie_dimension"
+                                   class="form-control"
+                                   min="1"
+                                   value="{{ settings.klaroCookieDimension.getValue()|default('') }}"
+                                   placeholder="e.g. 5" />
+                            <div class="form-text text-muted">Enter the visit-scope custom dimension index where Klaro consent data is stored</div>
+                        </div>
+                    </div>
+
+                    <div class="form-info">
+                        <h5>About Klaro Cookie Dimension</h5>
+                        <p>This setting specifies which visit-scope custom dimension contains the Klaro consent cookie value. This dimension is used to determine if a user has given consent for tracking and advertising.</p>
+                        <p>Make sure this matches the dimension you've configured in your tracking setup to capture the Klaro cookie value.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Consent Settings Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Klaro Consent Service Names</h3>
+                </div>
+                <div class="card-content">
+                    <p class="description">Configure the Klaro cookie service names for each advertising platform.</p>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">Google Service Name</label>
+                        <div class="col-sm-9">
+                            <input type="text"
+                                   id="google_service_name"
+                                   name="consent_services[google]"
+                                   class="form-control"
+                                   value="{{ settings.consentServices['google'].getValue()|default('') }}"
+                                   placeholder="e.g. google-ads" />
+                            <div class="form-text text-muted">The Klaro cookie service name for Google integration</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">Meta/Facebook Service Name</label>
+                        <div class="col-sm-9">
+                            <input type="text"
+                                   id="meta_service_name"
+                                   name="consent_services[meta]"
+                                   class="form-control"
+                                   value="{{ settings.consentServices['meta'].getValue()|default('') }}"
+                                   placeholder="e.g. facebook-pixel" />
+                            <div class="form-text text-muted">The Klaro cookie service name for Meta/Facebook integration</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">LinkedIn Service Name</label>
+                        <div class="col-sm-9">
+                            <input type="text"
+                                   id="linkedin_service_name"
+                                   name="consent_services[linkedin]"
+                                   class="form-control"
+                                   value="{{ settings.consentServices['linkedin'].getValue()|default('') }}"
+                                   placeholder="e.g. linkedin-insight" />
+                            <div class="form-text text-muted">The Klaro cookie service name for LinkedIn integration</div>
+                        </div>
+                    </div>
+
+                    <div class="form-info">
+                        <h5>About Consent Services</h5>
+                        <p>Enter the exact service names as configured in your Klaro consent management setup. These names are used to check the klaroCookie if a user has given consent before sending data to advertising platforms.</p>
+                        <p>If a field is left empty, the integration will assume no consent is required for that platform.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <input type="submit" class="btn btn-primary" value="Save Changes" />
+                <a href="{{ linkTo({module: 'ConversionApi', action: 'index'}) }}" class="btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <style>
+        /* Header and Navigation Styles */
+        .settings-header {
+            background: linear-gradient(to right, #2C3E50, #4CA1AF);
+            color: #fff;
+            padding: 0;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .settings-header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .settings-breadcrumb {
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+
+        .btn-back {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+            padding: 6px 12px;
+            width: fit-content;
+        }
+
+        .btn-back:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .btn-back .icon-arrow-left {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .settings-title-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+        }
+
+        .settings-title {
+            font-size: 24px;
+            font-weight: 500;
+            margin: 0;
+            color: #fff;
+        }
+
+        .site-identifier {
+            display: flex;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+
+        .site-identifier .icon-website {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .site-name {
+            font-weight: 500;
+        }
+
+        .settings-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Card Styles */
+        .card {
+            border: none;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-header {
+            background-color: #f9f9f9;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .card-content {
+            padding: 20px;
+            background-color: #fff;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -15px;
+            margin-left: -15px;
+        }
+
+        .col-sm-3 {
+            position: relative;
+            width: 25%;
+            padding-right: 15px;
+            padding-left: 15px;
+            flex: 0 0 25%;
+            max-width: 25%;
+        }
+
+        .col-sm-9 {
+            position: relative;
+            width: 75%;
+            padding-right: 15px;
+            padding-left: 15px;
+            flex: 0 0 75%;
+            max-width: 75%;
+        }
+
+        .col-form-label {
+            padding-top: calc(0.375rem + 1px);
+            padding-bottom: calc(0.375rem + 1px);
+            margin-bottom: 0;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .form-control {
+            display: block;
+            width: 100%;
+            height: calc(1.5em + 0.75rem + 2px);
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        .form-text {
+            margin-top: 5px;
+            font-size: 0.85em;
+            color: #777;
+        }
+
+        .form-info {
+            margin-top: 20px;
+            background-color: #f7f7f7;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #1E66FF;
+        }
+
+        .form-info h5 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .form-actions {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            border: 1px solid #ddd;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .btn:hover {
+            background-color: #e5e5e5;
+            border-color: #ccc;
+        }
+
+        .btn-primary {
+            background-color: #1E66FF;
+            border-color: #1E66FF;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: #0047E1;
+            border-color: #0047E1;
+            color: #fff;
+        }
+
+        .description {
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .settings-title-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .site-identifier {
+                margin-top: 10px;
+            }
+
+            .settings-title {
+                font-size: 20px;
+            }
+
+            .row {
+                flex-direction: column;
+            }
+
+            .col-sm-3, .col-sm-9 {
+                width: 100%;
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+
+            .col-form-label {
+                margin-bottom: 8px;
+            }
+        }
+    </style>
+{% endblock %}

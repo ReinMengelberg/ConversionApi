@@ -3,604 +3,162 @@ namespace Piwik\Plugins\ConversionApi;
 
 use Piwik\Settings\Setting;
 use Piwik\Settings\FieldConfig;
+use Piwik\Plugins\ConversionApi\Settings\ApiSettings;
+use Piwik\Plugins\ConversionApi\Settings\DimensionSettings;
+use Piwik\Plugins\ConversionApi\Settings\ConsentSettings;
+use Piwik\Plugins\ConversionApi\Settings\EventSettings;
 
+/**
+ * Main MeasurableSettings class that manages all settings
+ * by delegating to specialized settings classes
+ */
 class MeasurableSettings extends \Piwik\Settings\Measurable\MeasurableSettings
 {
+    // API related settings for Meta
     /** @var Setting */
     public $metapixelId;
-
     /** @var Setting */
     public $metaAccessToken;
-
     /** @var Setting */
     public $metatestEventCode;
-
     /** @var Setting */
     public $metaGraphApiVersion;
-
     /** @var Setting */
     public $metaSyncVisits;
 
+    // API related settings for Google Ads
     /** @var Setting */
     public $googleAdsDeveloperToken;
-
     /** @var Setting */
     public $googleAdsClientId;
-
     /** @var Setting */
     public $googleAdsClientSecret;
-
     /** @var Setting */
     public $googleAdsRefreshToken;
-
     /** @var Setting */
     public $googleAdsLoginCustomerId;
-
     /** @var Setting */
     public $googleAdsApiVersion;
-
     /** @var Setting */
     public $googleSyncVisits;
 
+    // API related settings for LinkedIn
     /** @var Setting */
     public $linkedinAccessToken;
-
     /** @var Setting */
     public $linkedinAdAccountUrn;
-
     /** @var Setting */
     public $linkedinApiVersion;
-
     /** @var Setting */
     public $linkedinSyncVisits;
 
+    // Dimension related settings
     /** @var array of Setting objects */
     public $visitDimensions = [];
-
-    // Visit dimension variables
-    private $visitVariables = [
-        'userAgent',
-        'emailValue',
-        'nameValue',
-        'phoneValue',
-        'klaroCookie',
-        '_fbc',
-        '_fbp',
-        'gclid'
-    ];
-
     /** @var array of Setting objects */
     public $actionDimensions = [];
 
-    // Action dimension variables - empty for now, but prepared for future
-    private $actionVariables = [];
-
+    // Event related settings
     /** @var Setting Setting for event ID source */
     public $eventIdSource;
-
     /** @var Setting Setting for event ID custom dimension*/
     public $eventIdCustomDimension;
-
     /** @var array of Setting objects */
     public $eventCategories = [];
 
-    /** @var array Standard event mappings - these are hardcoded */
-    private $standardEventNames = [
-        'lead' => [
-            'google' => 'generate_lead',
-            'meta' => 'Lead',
-            'linkedin' => 'Lead'
-        ],
-        'account' => [
-            'google' => 'sign_up',
-            'meta' => 'CompleteRegistration',
-            'linkedin' => 'Registration'
-        ],
-        'appointment' => [
-            'google' => 'schedule',
-            'meta' => 'Schedule',
-            'linkedin' => 'Appointment'
-        ],
-        'applicant' => [
-            'google' => 'submit_application',
-            'meta' => 'SubmitApplication',
-            'linkedin' => 'JobApply'
-        ]
-    ];
+    // Consent related settings
+    /** @var Setting Setting for Klaro cookie dimension index */
+    public $klaroCookieDimension;
+    /** @var array of Setting objects */
+    public $consentServices = [];
 
+    // Settings manager instances
+    /** @var ApiSettings */
+    private $apiSettings;
+    /** @var DimensionSettings */
+    private $dimensionSettings;
+    /** @var ConsentSettings */
+    private $consentSettings;
+    /** @var EventSettings */
+    private $eventSettings;
+
+    /**
+     * Initialize all settings
+     */
     protected function init()
     {
-        // Meta settings
-        $this->metapixelId = $this->makeMetaPixelIdSetting();
-        $this->metaAccessToken = $this->makeMetaAccessTokenSetting();
-        $this->metatestEventCode = $this->makeMetaTestEventCodeSetting();
-        $this->metaGraphApiVersion = $this->makeMetaGraphApiVersionSetting();
-        $this->metaSyncVisits = $this->makeMetaSyncVisitsSetting();
+        // Initialize settings managers
+        $this->apiSettings = new ApiSettings($this);
+        $this->dimensionSettings = new DimensionSettings($this);
+        $this->eventSettings = new EventSettings($this);
+        $this->consentSettings = new ConsentSettings($this);
 
-        // Google settings
-        $this->googleAdsDeveloperToken = $this->makeGoogleAdsDeveloperTokenSetting();
-        $this->googleAdsClientId = $this->makeGoogleAdsClientIdSetting();
-        $this->googleAdsClientSecret = $this->makeGoogleAdsClientSecretSetting();
-        $this->googleAdsRefreshToken = $this->makeGoogleAdsRefreshTokenSetting();
-        $this->googleAdsLoginCustomerId = $this->makeGoogleAdsLoginCustomerIdSetting();
-        $this->googleAdsApiVersion = $this->makeGoogleAdsApiVersionSetting();
-        $this->googleSyncVisits = $this->makeGoogleSyncVisitsSetting();
-
-        // LinkedIn settings
-        $this->linkedinAccessToken = $this->makeLinkedinAccessTokenSetting();
-        $this->linkedinAdAccountUrn = $this->makeLinkedinAdAccountUrnSetting();
-        $this->linkedinApiVersion = $this->makeLinkedinApiVersionSetting();
-        $this->linkedinSyncVisits = $this->makeLinkedinSyncVisitsSetting();
-
-        // Initialize Custom Dimension Settings
-        $this->initDimensionSettings();
-
-        // Initialize Event Settings
-        $this->eventIdSource = $this->makeEventIdSourceSetting();
-        $this->eventIdCustomDimension = $this->makeEventIdCustomDimensionSetting();
-        $this->initEventCategorySettings();
+        // Initialize all settings
+        $this->apiSettings->initSettings();
+        $this->dimensionSettings->initSettings();
+        $this->eventSettings->initSettings();
+        $this->consentSettings->initSettings();
     }
 
     /**
-     * Initialize event category settings
-     */
-    private function initEventCategorySettings()
-    {
-        // For each standard event type, create a setting for the Matomo category name
-        foreach (array_keys($this->standardEventNames) as $eventType) {
-            $this->eventCategories[$eventType] = $this->createEventCategorySetting($eventType);
-        }
-    }
-
-    /**
-     * Create a setting for a specific event category
+     * Get all dimension mappings in a format ready for tracking
      *
-     * @param string $eventType Standard event type (lead, account, etc.)
-     * @return Setting
+     * @return array
      */
-    private function createEventCategorySetting($eventType)
+    public function getDimensionMappings()
     {
-        $title = $this->getEventTypeTitle($eventType);
-        $description = $this->getEventTypeDescription($eventType);
-
-        return $this->makeSetting(
-            'event_category_' . $eventType,
-            $eventType, // Default value is the same as the key
-            FieldConfig::TYPE_STRING,
-            function (FieldConfig $field) use ($title, $description, $eventType) {
-                $field->title = $title . ' Category';
-                $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
-                $field->description = "Matomo event category for " . strtolower($title);
-                $field->inlineHelp = $description;
-            }
-        );
+        return $this->dimensionSettings->getDimensionMappings();
     }
 
     /**
-     * Get human-readable title for an event type
-     */
-    private function getEventTypeTitle($eventType)
-    {
-        $titles = [
-            'lead' => 'Lead',
-            'account' => 'Account Registration',
-            'appointment' => 'Appointment',
-            'applicant' => 'Job Application',
-        ];
-
-        return isset($titles[$eventType]) ? $titles[$eventType] : ucfirst($eventType);
-    }
-
-    /**
-     * Get description for an event type
-     */
-    private function getEventTypeDescription($eventType)
-    {
-        $descriptions = [
-            'lead' => 'Category used when tracking lead form submissions',
-            'account' => 'Category used when tracking account registrations or sign-ups',
-            'appointment' => 'Category used when tracking appointment bookings or scheduling',
-            'applicant' => 'Category used when tracking job applications',
-        ];
-
-        return isset($descriptions[$eventType]) ? $descriptions[$eventType] : '';
-    }
-
-    /**
-     * Get standard event name for a given Matomo category and platform
+     * Get event ID configuration
      *
-     * @param string $matomoCategory Matomo event category to look up
-     * @param string $platform Platform to get event name for (google, meta, linkedin)
-     * @return string|null Standard event name or null if not found
+     * @return array
      */
-    public function getStandardEventName($matomoCategory, $platform)
+    public function getEventIdConfiguration()
     {
-        // First, check if this category directly matches any of our standard event types
-        foreach ($this->eventCategories as $eventType => $setting) {
-            if ($setting->getValue() === $matomoCategory) {
-                return $this->standardEventNames[$eventType][$platform] ?? null;
-            }
-        }
-
-        return null;
+        return $this->eventSettings->getEventIdConfiguration();
     }
 
     /**
      * Get all event mappings as an associative array
      *
-     * @return array Associative array of Matomo category => [platform => event name]
+     * @return array
      */
     public function getAllEventMappings()
     {
-        $result = [];
-
-        foreach ($this->eventCategories as $eventType => $setting) {
-            $matomoCategory = $setting->getValue();
-
-            if (!empty($matomoCategory)) {
-                $result[$matomoCategory] = $this->standardEventNames[$eventType];
-            }
-        }
-
-        return $result;
+        return $this->eventSettings->getAllEventMappings();
     }
 
     /**
-     * Initialize custom dimension settings
+     * Get standard event name for a given Matomo category and platform
+     *
+     * @param string $matomoCategory
+     * @param string $platform
+     * @return string|null
      */
-    private function initDimensionSettings()
+    public function getStandardEventName($matomoCategory, $platform)
     {
-        // Initialize Visit Dimension Settings
-        foreach ($this->visitVariables as $variable) {
-            $this->visitDimensions[$variable] = $this->createVisitDimensionSetting($variable);
-        }
-
-        // Initialize Action Dimension Settings - prepared for future
-        foreach ($this->actionVariables as $variable) {
-            $this->actionDimensions[$variable] = $this->createActionDimensionSetting($variable);
-        }
+        return $this->eventSettings->getStandardEventName($matomoCategory, $platform);
     }
 
     /**
-     * Create a setting for visit dimension
+     * Get all consent service names
+     *
+     * @return array
      */
-    private function createVisitDimensionSetting($variable)
+    public function getConsentServices()
     {
-        $title = $this->getVariableTitle($variable);
-        $description = $this->getVariableDescription($variable);
-
-        return $this->makeSetting(
-            'visit_dim_' . $variable,
-            '',
-            FieldConfig::TYPE_INT,
-            function (FieldConfig $field) use ($title, $description) {
-                $field->title = $title;
-                $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
-                $field->description = "Maps $title to a custom dimension index";
-                $field->inlineHelp = $description;
-                $field->validate = function ($value) {
-                    if (!empty($value) && (!is_numeric($value) || $value < 1)) {
-                        throw new \Exception('Dimension index must be a positive number');
-                    }
-                };
-            }
-        );
+        return $this->consentSettings->getConsentServices();
     }
 
     /**
-     * Create a setting for action dimension
+     * Get consent configuration
+     *
+     * @return array
      */
-    private function createActionDimensionSetting($variable)
+    public function getConsentConfiguration()
     {
-        $title = $this->getVariableTitle($variable);
-        $description = $this->getVariableDescription($variable);
-
-        return $this->makeSetting(
-            'action_dim_' . $variable,
-            '',
-            FieldConfig::TYPE_INT,
-            function (FieldConfig $field) use ($title, $description) {
-                $field->title = $title;
-                $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
-                $field->description = "Maps $title to a custom dimension index";
-                $field->inlineHelp = $description;
-                $field->validate = function ($value) {
-                    if (!empty($value) && (!is_numeric($value) || $value < 1)) {
-                        throw new \Exception('Dimension index must be a positive number');
-                    }
-                };
-            }
-        );
-    }
-
-    /**
-     * Get human-readable title for a variable
-     */
-    private function getVariableTitle($variable)
-    {
-        $titles = [
-            'userAgent' => 'User Agent',
-            'emailValue' => 'Email Value',
-            'nameValue' => 'Name Value',
-            'phoneValue' => 'Phone Value',
-            'klaroCookie' => 'Klaro Cookie',
-            '_fbc' => 'Facebook Click ID (_fbc)',
-            '_fbp' => 'Facebook Browser ID (_fbp)',
-            'gclid' => 'Google Click ID (gclid)',
-            // Add more as needed
-        ];
-
-        return isset($titles[$variable]) ? $titles[$variable] : $variable;
-    }
-
-    /**
-     * Get description for a variable
-     */
-    private function getVariableDescription($variable)
-    {
-        $descriptions = [
-            'userAgent' => 'User agent string from the visitor\'s browser',
-            'emailValue' => 'Email address captured from forms or user input',
-            'nameValue' => 'User\'s name captured from forms or user input',
-            'phoneValue' => 'Phone number captured from forms or user input',
-            'klaroCookie' => 'Klaro consent management cookie value',
-            '_fbc' => 'Facebook click identifier for ad attribution',
-            '_fbp' => 'Facebook browser identifier for cross-site tracking',
-            'gclid' => 'Google Click ID for AdWords campaign tracking',
-            // Add more as needed
-        ];
-
-        return isset($descriptions[$variable]) ? $descriptions[$variable] : '';
-    }
-
-    /**
-     * Get all dimension mappings in a format ready for tracking
-     */
-    public function getDimensionMappings()
-    {
-        $mappings = [
-            'visit' => [],
-            'action' => []
-        ];
-
-        // Process visit dimensions
-        foreach ($this->visitDimensions as $variable => $setting) {
-            $value = $setting->getValue();
-            if (!empty($value)) {
-                $mappings['visit'][$variable] = (int)$value;
-            }
-        }
-
-        // Process action dimensions
-        foreach ($this->actionDimensions as $variable => $setting) {
-            $value = $setting->getValue();
-            if (!empty($value)) {
-                $mappings['action'][$variable] = (int)$value;
-            }
-        }
-
-        return $mappings;
-    }
-
-    public function getEventIdConfiguration()
-    {
-        $source = $this->eventIdSource->getValue();
-        $config = ['source' => $source];
-
-        if ($source === 'custom_dimension') {
-            $config['dimension_index'] = (int)$this->eventIdCustomDimension->getValue();
-        }
-
-        return $config;
-    }
-
-    // MAKE SETTINS
-    private function makeMetaPixelIdSetting()
-    {
-        return $this->makeSetting('meta_pixel_id', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
-            $field->title = 'Meta Pixel ID';
-            $field->description = 'Your Meta (Facebook) Pixel ID for this website';
-            $field->inlineHelp = 'Found in Meta Business Manager under Data Sources > Pixels';
-            $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
-            $field->validate = function ($value) {
-                if (!empty($value) && !preg_match('/^\d+$/', $value)) {
-                    throw new \Exception('Pixel ID should contain only numbers');
-                }
-            };
-        });
-    }
-
-    private function makeMetaAccessTokenSetting()
-    {
-        return $this->makeSetting('meta_access_token', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
-            $field->title = 'Access Token';
-            $field->description = 'Your Meta (Facebook) API Access Token for this website';
-            $field->inlineHelp = 'Generate a token with ads_management permission in Meta Business Manager';
-            $field->uiControl = FieldConfig::UI_CONTROL_PASSWORD;
-        });
-    }
-
-    private function makeMetaTestEventCodeSetting()
-    {
-        return $this->makeSetting('meta_test_event_code', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
-            $field->title = 'Test Event Code';
-            $field->description = 'Optional: Test Event Code for Meta Test Events';
-            $field->inlineHelp = 'Use this during testing to verify events in Meta Events Manager';
-            $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
-        });
-    }
-
-    private function makeMetaGraphApiVersionSetting()
-    {
-        return $this->makeSetting('meta_graph_api_version', 'v22.0', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
-            $field->title = 'Graph API Version';
-            $field->description = 'Meta Graph API Version';
-            $field->inlineHelp = 'The version of Meta\'s Graph API to use (default: v22.0)';
-            $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
-        });
-    }
-
-    private function makeMetaSyncVisitsSetting()
-    {
-        return $this->makeSetting('meta_sync_visits', false, FieldConfig::TYPE_BOOL, function (FieldConfig $field) {
-            $field->title = 'Sync Visits to Meta';
-            $field->description = 'Automatically sync visit data to Meta Conversion API';
-            $field->uiControl = FieldConfig::UI_CONTROL_CHECKBOX;
-        });
-    }
-
-    // Google Settings
-    private function makeGoogleAdsDeveloperTokenSetting()
-    {
-        return $this->makeSetting('google_ads_developer_token', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
-            $field->title = 'Developer Token';
-            $field->description = 'Your Google Ads API Developer Token';
-            $field->inlineHelp = 'Required for making API calls to Google Ads';
-            $field->uiControl = FieldConfig::UI_CONTROL_PASSWORD;
-        });
-    }
-
-    private function makeGoogleAdsClientIdSetting()
-    {
-        return $this->makeSetting('google_ads_client_id', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
-            $field->title = 'OAuth Client ID';
-            $field->description = 'Your Google OAuth Client ID';
-            $field->inlineHelp = 'Created in the Google Cloud Console';
-            $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
-        });
-    }
-
-    private function makeGoogleAdsClientSecretSetting()
-    {
-        return $this->makeSetting('google_ads_client_secret', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
-            $field->title = 'OAuth Client Secret';
-            $field->description = 'Your Google OAuth Client Secret';
-            $field->inlineHelp = 'Created in the Google Cloud Console';
-            $field->uiControl = FieldConfig::UI_CONTROL_PASSWORD;
-        });
-    }
-
-    private function makeGoogleAdsRefreshTokenSetting()
-    {
-        return $this->makeSetting('google_ads_refresh_token', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
-            $field->title = 'Refresh Token';
-            $field->description = 'Your Google OAuth Refresh Token';
-            $field->inlineHelp = 'Generated during the OAuth authentication process';
-            $field->uiControl = FieldConfig::UI_CONTROL_PASSWORD;
-        });
-    }
-
-    private function makeGoogleAdsLoginCustomerIdSetting()
-    {
-        return $this->makeSetting('google_ads_login_customer_id', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
-            $field->title = 'Login Customer ID';
-            $field->description = 'Your Google Ads Manager Account ID (without dashes)';
-            $field->inlineHelp = 'Required if using a manager account for authentication';
-            $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
-            $field->validate = function ($value) {
-                if (!empty($value) && !preg_match('/^\d+$/', $value)) {
-                    throw new \Exception('Customer ID should contain only numbers');
-                }
-            };
-        });
-    }
-
-    private function makeGoogleAdsApiVersionSetting()
-    {
-        return $this->makeSetting('google_ads_api_version', 'v19', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
-            $field->title = 'API Version';
-            $field->description = 'Google Ads API Version';
-            $field->inlineHelp = 'The version of Google Ads API to use (default: v19)';
-            $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
-        });
-    }
-
-    private function makeGoogleSyncVisitsSetting()
-    {
-        return $this->makeSetting('google_sync_visits', false, FieldConfig::TYPE_BOOL, function (FieldConfig $field) {
-            $field->title = 'Sync Visits to Google';
-            $field->description = 'Automatically sync visit data to Google Ads API';
-            $field->uiControl = FieldConfig::UI_CONTROL_CHECKBOX;
-        });
-    }
-
-    // LinkedIn Settings
-    private function makeLinkedinAccessTokenSetting()
-    {
-        return $this->makeSetting('linkedin_access_token', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
-            $field->title = 'Access Token';
-            $field->description = 'Your LinkedIn API Access Token';
-            $field->inlineHelp = 'Generate a token with the required permissions in LinkedIn Developer Portal';
-            $field->uiControl = FieldConfig::UI_CONTROL_PASSWORD;
-        });
-    }
-
-    private function makeLinkedinAdAccountUrnSetting()
-    {
-        return $this->makeSetting('linkedin_ad_account_id', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
-            $field->title = 'Ad Account ID';
-            $field->description = 'Your LinkedIn Ad Account ID';
-            $field->inlineHelp = 'Format: urn:li:sponsoredAccount:123456789';
-            $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
-        });
-    }
-
-    private function makeLinkedinApiVersionSetting()
-    {
-        return $this->makeSetting('linkedin_api_version', '202404', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
-            $field->title = 'API Version';
-            $field->description = 'LinkedIn API Version';
-            $field->inlineHelp = 'The version of LinkedIn API to use (default: 202404)';
-            $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
-        });
-    }
-
-    private function makeLinkedinSyncVisitsSetting()
-    {
-        return $this->makeSetting('linkedin_sync_visits', false, FieldConfig::TYPE_BOOL, function (FieldConfig $field) {
-            $field->title = 'Sync Visits to LinkedIn';
-            $field->description = 'Automatically sync visit data to LinkedIn Conversions API';
-            $field->uiControl = FieldConfig::UI_CONTROL_CHECKBOX;
-        });
-    }
-
-    private function makeEventIdSourceSetting()
-    {
-        return $this->makeSetting(
-            'event_id_source',
-            'event_name', // Default: use event name
-            FieldConfig::TYPE_STRING,
-            function (FieldConfig $field) {
-                $field->title = 'Event ID Source';
-                $field->description = 'Select where to retrieve the Event ID from';
-                $field->uiControl = FieldConfig::UI_CONTROL_RADIO;
-                $field->availableValues = [
-                    'event_name' => 'Event Name',
-                    'custom_dimension' => 'Custom Dimension'
-                ];
-                $field->inlineHelp = 'Choose whether to use the Event Name field or a specific Custom Dimension as the Event ID';
-            }
-        );
-    }
-
-    private function makeEventIdCustomDimensionSetting()
-    {
-        return $this->makeSetting(
-            'event_id_custom_dimension',
-            '',
-            FieldConfig::TYPE_INT,
-            function (FieldConfig $field) {
-                $field->title = 'Event ID Custom Dimension';
-                $field->description = 'Custom Dimension index to use as Event ID';
-                $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
-                $field->inlineHelp = 'Enter the index of the action-scoped custom dimension that contains the Event ID';
-                $field->condition = 'event_id_source == "custom_dimension"';
-                $field->validate = function ($value) {
-                    if (!empty($value) && (!is_numeric($value) || $value < 1)) {
-                        throw new \Exception('Custom Dimension index must be a positive number');
-                    }
-                };
-            }
-        );
+        return $this->consentSettings->getConsentConfiguration();
     }
 }

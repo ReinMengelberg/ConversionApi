@@ -128,6 +128,44 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
         ]);
     }
 
+    /**
+     * Controller method for the consent settings page
+     */
+    public function siteConsentSettings()
+    {
+        $idSite = Common::getRequestVar('idSite', null, 'int');
+        Piwik::checkUserHasAdminAccess($idSite);
+
+        // Get settings for this specific site
+        $settingsProvider = StaticContainer::get('Piwik\Plugin\SettingsProvider');
+        $settings = $settingsProvider->getMeasurableSettings('ConversionApi', $idSite);
+
+        if (Common::getRequestVar('submitted', '', 'string') === 'true') {
+            // Process form submission
+            $this->processConsentFormSubmission($settings);
+
+            // Redirect to prevent form resubmission
+            $params = [
+                'module' => 'ConversionApi',
+                'action' => 'siteConsentSettings',
+                'idSite' => $idSite,
+                'updated' => 1
+            ];
+
+            // Use standard PHP function
+            $url = 'index.php?' . http_build_query($params);
+            Url::redirectToUrl($url);
+        }
+
+        // Render the settings form
+        return $this->renderTemplate('siteConsentSettings', [
+            'settings' => $settings,
+            'idSite' => $idSite,
+            'siteName' => Site::getNameFor($idSite),
+            'updated' => Common::getRequestVar('updated', 0, 'int')
+        ]);
+    }
+
     private function processFormSubmission($settings)
     {
         // Meta API settings
@@ -206,6 +244,29 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
             $dimensionIndex = Common::getRequestVar('event_id_custom_dimension', '', 'string');
             $settings->eventIdCustomDimension->setValue($dimensionIndex);
         }
+
+        // Save all settings
+        $settings->save();
+    }
+
+    /**
+     * Process form submission for consent settings
+     */
+    private function processConsentFormSubmission($settings)
+    {
+        // Process consent service names
+        $consentServices = Common::getRequestVar('consent_services', [], 'array');
+
+        // Update each platform's consent service name setting
+        foreach ($consentServices as $platform => $serviceName) {
+            if (isset($settings->consentServices[$platform])) {
+                $settings->consentServices[$platform]->setValue(trim($serviceName));
+            }
+        }
+
+        // Process Klaro cookie dimension index
+        $klaroCookieDimension = Common::getRequestVar('klaro_cookie_dimension', '', 'string');
+        $settings->klaroCookieDimension->setValue($klaroCookieDimension);
 
         // Save all settings
         $settings->save();
