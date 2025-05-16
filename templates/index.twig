@@ -1,4 +1,3 @@
-
 {# plugins/ConversionApi/templates/index.twig #}
 {% extends 'admin.twig' %}
 
@@ -7,7 +6,7 @@
         <div class="settings-header-container">
             <div class="settings-title-container">
                 <h1 class="settings-title">Conversion API Settings</h1>
-                <div class="subtitle">Configure API connections for your websites</div>
+                <div class="subtitle">Configure Conversion API connections for your websites</div>
             </div>
         </div>
     </div>
@@ -23,7 +22,7 @@
                         <thead>
                         <tr>
                             <th>Website</th>
-                            <th class="text-right">Actions</th>
+                            <th>Configuration</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -38,13 +37,23 @@
                                 <td class="text-right">
                                     <div class="action-buttons">
                                         <a href="{{ linkTo({module: 'ConversionApi', action: 'siteApiSettings', idSite: site.idsite}) }}"
-                                           class="btn-action">
-                                            <span>API Settings</span>
+                                           class="btn-action btn-api">
+                                            <span class="btn-text">API Credentials</span>
                                             <span class="icon-arrow-right"></span>
                                         </a>
                                         <a href="{{ linkTo({module: 'ConversionApi', action: 'siteDimensionsSettings', idSite: site.idsite}) }}"
                                            class="btn-action btn-dimensions">
-                                            <span>Custom Dimensions</span>
+                                            <span class="btn-text">Dimensions</span>
+                                            <span class="icon-arrow-right"></span>
+                                        </a>
+                                        <a href="{{ linkTo({module: 'ConversionApi', action: 'siteEventSettings', idSite: site.idsite}) }}"
+                                           class="btn-action btn-events">
+                                            <span class="btn-text">Events</span>
+                                            <span class="icon-arrow-right"></span>
+                                        </a>
+                                        <a href="{{ linkTo({module: 'ConversionApi', action: 'siteConsentSettings', idSite: site.idsite}) }}"
+                                           class="btn-action btn-consent">
+                                            <span class="btn-text">Consent</span>
                                             <span class="icon-arrow-right"></span>
                                         </a>
                                     </div>
@@ -156,7 +165,7 @@
         }
 
         .dataTable td {
-            padding: 12px 15px;
+            padding: 18px 15px;  /* Increased padding to make rows bigger */
             border-bottom: 1px solid #eee;
             vertical-align: middle;
         }
@@ -183,54 +192,86 @@
         .site-name-container .icon-website {
             margin-right: 10px;
             color: #666;
+            font-size: 18px;
         }
 
         .site-name {
             font-weight: 500;
             color: #333;
+            font-size: 16px;
         }
 
         .action-buttons {
             display: flex;
             gap: 10px;
             justify-content: flex-end;
+            flex-wrap: wrap;
         }
 
         .btn-action {
             display: inline-flex;
             align-items: center;
-            padding: 6px 12px;
-            background-color: #1E66FF;
+            justify-content: space-between;
+            padding: 8px 16px;
             color: #fff;
             border-radius: 4px;
             text-decoration: none;
             transition: all 0.2s ease;
             font-weight: 500;
+            min-width: 160px;
         }
 
         .btn-action:hover {
-            background-color: #0047E1;
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .btn-api {
+            background-color: #3A526A;
         }
 
         .btn-dimensions {
-            background-color: #34A853;
+            background-color: #3D7285;
         }
 
-        .btn-dimensions:hover {
-            background-color: #2C8C45;
+        .btn-events {
+            background-color: #4CA1AF;
         }
 
-        .btn-action span {
-            display: inline-block;
+        .btn-consent {
+            background-color: #5D8B99;
+        }
+
+        .btn-text {
             color: #fff;
+            font-weight: 500;
         }
 
-        .btn-action .icon-arrow-right {
-            margin-left: 8px;
+        .icon-arrow-right {
+            color: #fff;
             font-size: 12px;
         }
 
         /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .action-buttons {
+                flex-direction: column;
+                gap: 8px;
+                align-items: stretch;
+            }
+
+            .btn-action {
+                width: 100%;
+                justify-content: space-between;
+                padding: 10px 16px;
+            }
+
+            .dataTable td {
+                padding: 15px;
+            }
+        }
+
         @media (max-width: 768px) {
             .settings-title-container {
                 flex-direction: column;
@@ -247,17 +288,35 @@
 
             .dataTable th,
             .dataTable td {
-                padding: 10px;
+                padding: 12px 10px;
             }
 
-            .action-buttons {
-                flex-direction: column;
-                gap: 8px;
-            }
-
-            .btn-action {
+            .dataTable,
+            .dataTable tbody,
+            .dataTable tr,
+            .dataTable td {
+                display: block;
                 width: 100%;
-                justify-content: space-between;
+            }
+
+            .dataTable thead {
+                display: none;
+            }
+
+            .dataTable tr {
+                margin-bottom: 15px;
+                border-bottom: 2px solid #eee;
+                padding-bottom: 15px;
+            }
+
+            .dataTable tr:last-child {
+                margin-bottom: 0;
+                border-bottom: none;
+            }
+
+            .text-right {
+                text-align: left;
+                padding-top: 0;
             }
         }
     </style>

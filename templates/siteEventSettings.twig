@@ -1,0 +1,447 @@
+{# plugins/ConversionApi/templates/siteEventSettings.twig #}
+{% extends 'admin.twig' %}
+
+{% block content %}
+    <div class="settings-header">
+        <div class="settings-header-container">
+            <div class="settings-breadcrumb">
+                <a href="{{ linkTo({module: 'ConversionApi', action: 'index'}) }}" class="btn-back">
+                    <span class="icon-arrow-left"></span>
+                    <span>Back to Overview</span>
+                </a>
+            </div>
+            <div class="settings-title-container">
+                <h1 class="settings-title">Event Category Mappings</h1>
+                <div class="site-identifier">
+                    <span class="icon-website"></span>
+                    <span class="site-name">{{ siteName }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-content">
+        {% if updated is defined and updated %}
+            <div piwik-notification context="success">
+                Event mappings successfully saved.
+            </div>
+        {% endif %}
+
+        <form method="post" action="{{ linkTo({module: 'ConversionApi', action: 'siteEventSettings', idSite: idSite}) }}" id="eventMappingsForm">
+            <input type="hidden" name="submitted" value="true" />
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Event Category Mappings</h3>
+                </div>
+                <div class="card-content">
+                    <p class="description">Configure your Matomo event categories to match standardized event names in Google, Meta, and LinkedIn. Only the Matomo event categories can be customized.</p>
+
+                    <div class="form-table">
+                        <div class="form-table-header">
+                            <div class="form-table-cell">Matomo Event Category</div>
+                            <div class="form-table-cell">Google Event Name</div>
+                            <div class="form-table-cell">Meta Event Name</div>
+                            <div class="form-table-cell">LinkedIn Event Name</div>
+                        </div>
+
+                        <div id="mappings-container">
+                            <!-- Lead mapping -->
+                            <div class="form-table-row mapping-row">
+                                <div class="form-table-cell">
+                                    <input type="text"
+                                           name="eventCategories[lead]"
+                                           class="form-control"
+                                           value="{{ settings.eventCategories.lead.getValue() }}"
+                                           placeholder="Matomo category for leads" />
+                                </div>
+                                <div class="form-table-cell">
+                                    <div class="platform-event-name">generate_lead</div>
+                                </div>
+                                <div class="form-table-cell">
+                                    <div class="platform-event-name">Lead</div>
+                                </div>
+                                <div class="form-table-cell">
+                                    <div class="platform-event-name">Lead</div>
+                                </div>
+                            </div>
+
+                            <!-- Account mapping -->
+                            <div class="form-table-row mapping-row">
+                                <div class="form-table-cell">
+                                    <input type="text"
+                                           name="eventCategories[account]"
+                                           class="form-control"
+                                           value="{{ settings.eventCategories.account.getValue() }}"
+                                           placeholder="Matomo category for account creation" />
+                                </div>
+                                <div class="form-table-cell">
+                                    <div class="platform-event-name">sign_up</div>
+                                </div>
+                                <div class="form-table-cell">
+                                    <div class="platform-event-name">CompleteRegistration</div>
+                                </div>
+                                <div class="form-table-cell">
+                                    <div class="platform-event-name">Registration</div>
+                                </div>
+                            </div>
+
+                            <!-- Appointment mapping -->
+                            <div class="form-table-row mapping-row">
+                                <div class="form-table-cell">
+                                    <input type="text"
+                                           name="eventCategories[appointment]"
+                                           class="form-control"
+                                           value="{{ settings.eventCategories.appointment.getValue() }}"
+                                           placeholder="Matomo category for appointments" />
+                                </div>
+                                <div class="form-table-cell">
+                                    <div class="platform-event-name">schedule</div>
+                                </div>
+                                <div class="form-table-cell">
+                                    <div class="platform-event-name">Schedule</div>
+                                </div>
+                                <div class="form-table-cell">
+                                    <div class="platform-event-name">Appointment</div>
+                                </div>
+                            </div>
+
+                            <!-- Applicant mapping -->
+                            <div class="form-table-row mapping-row">
+                                <div class="form-table-cell">
+                                    <input type="text"
+                                           name="eventCategories[applicant]"
+                                           class="form-control"
+                                           value="{{ settings.eventCategories.applicant.getValue() }}"
+                                           placeholder="Matomo category for job applications" />
+                                </div>
+                                <div class="form-table-cell">
+                                    <div class="platform-event-name">submit_application</div>
+                                </div>
+                                <div class="form-table-cell">
+                                    <div class="platform-event-name">SubmitApplication</div>
+                                </div>
+                                <div class="form-table-cell">
+                                    <div class="platform-event-name">JobApply</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-table-helper">
+                            <h4>Understanding Event Mapping</h4>
+                            <p>This table allows you to map your Matomo event categories to standard event names used by advertising platforms. Enter your custom Matomo category names in the first column. The event names for each platform are predefined and cannot be changed to ensure compatibility with the platform APIs.</p>
+
+                            <h5>Examples:</h5>
+                            <ul>
+                                <li>If your Matomo tracks lead form submissions with a category name like "form_submit" or "lead_gen", enter that in the first row.</li>
+                                <li>For account creations, you might use "signup", "register", or "create_account" as your Matomo category.</li>
+                                <li>Leave fields blank if you don't track a particular type of conversion.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <input type="submit" class="btn btn-primary" value="Save Changes" />
+                <a href="{{ linkTo({module: 'ConversionApi', action: 'index'}) }}" class="btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <style>
+        /* Header and Navigation Styles */
+        .settings-header {
+            background: linear-gradient(to right, #2C3E50, #4CA1AF);
+            color: #fff;
+            padding: 0;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .settings-header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .settings-breadcrumb {
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+
+        .btn-back {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+            padding: 6px 12px;
+            width: fit-content;
+        }
+
+        .btn-back:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .btn-back .icon-arrow-left {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .settings-title-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+        }
+
+        .settings-title {
+            font-size: 24px;
+            font-weight: 500;
+            margin: 0;
+            color: #fff;
+        }
+
+        .site-identifier {
+            display: flex;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+
+        .site-identifier .icon-website {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .site-name {
+            font-weight: 500;
+        }
+
+        .settings-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Card Styles */
+        .card {
+            border: none;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-header {
+            background-color: #f9f9f9;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .card-content {
+            padding: 20px;
+            background-color: #fff;
+        }
+
+        /* Form Table Layout */
+        .form-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .form-table-header {
+            display: flex;
+            background-color: #f5f5f5;
+            font-weight: 600;
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+
+        .form-table-row {
+            display: flex;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+            align-items: center;
+        }
+
+        .form-table-row:last-child {
+            border-bottom: none;
+        }
+
+        .form-table-row:hover {
+            background-color: #f9f9f9;
+        }
+
+        .form-table-cell {
+            padding: 12px 8px;
+            flex: 1;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: #1E66FF;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(30, 102, 255, 0.2);
+        }
+
+        .platform-event-name {
+            padding: 6px 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #333;
+            display: inline-block;
+        }
+
+        /* Helper Section */
+        .form-table-helper {
+            margin-top: 30px;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #1E66FF;
+        }
+
+        .form-table-helper h4 {
+            margin-top: 0;
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .form-table-helper h5 {
+            font-size: 14px;
+            margin: 15px 0 8px;
+        }
+
+        .form-table-helper ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .form-table-helper li {
+            margin-bottom: 5px;
+        }
+
+        /* Form Action Styles */
+        .form-actions {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            border: 1px solid #ddd;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .btn:hover {
+            background-color: #e5e5e5;
+            border-color: #ccc;
+        }
+
+        .btn-primary {
+            background-color: #1E66FF;
+            border-color: #1E66FF;
+            color: #fff;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #0047E1;
+            border-color: #0047E1;
+            color: #fff;
+        }
+
+        .description {
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .form-table-header {
+                display: none;
+            }
+
+            .form-table-row {
+                flex-direction: column;
+                padding: 10px;
+                margin-bottom: 15px;
+                border: 1px solid #eee;
+                border-radius: 4px;
+            }
+
+            .form-table-cell {
+                padding: 5px 0;
+                width: 100%;
+            }
+
+            .form-table-cell:before {
+                content: attr(data-label);
+                font-weight: 600;
+                display: block;
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+
+    <script>
+        $(document).ready(function() {
+            // Add data-label attributes for responsive display
+            function updateDataLabels() {
+                $('.mapping-row').each(function() {
+                    $(this).find('.form-table-cell').eq(0).attr('data-label', 'Matomo Event Category');
+                    $(this).find('.form-table-cell').eq(1).attr('data-label', 'Google Event Name');
+                    $(this).find('.form-table-cell').eq(2).attr('data-label', 'Meta Event Name');
+                    $(this).find('.form-table-cell').eq(3).attr('data-label', 'LinkedIn Event Name');
+                });
+            }
+
+            updateDataLabels();
+        });
+    </script>
+{% endblock %}

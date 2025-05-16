@@ -93,6 +93,41 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
         ]);
     }
 
+    public function siteEventSettings()
+    {
+        $idSite = Common::getRequestVar('idSite', null, 'int');
+        Piwik::checkUserHasAdminAccess($idSite);
+
+        // Get settings for this specific site
+        $settingsProvider = StaticContainer::get('Piwik\Plugin\SettingsProvider');
+        $settings = $settingsProvider->getMeasurableSettings('ConversionApi', $idSite);
+
+        if (Common::getRequestVar('submitted', '', 'string') === 'true') {
+            // Process form submission
+            $this->processEventCategoriesFormSubmission($settings);
+
+            // Redirect to prevent form resubmission
+            $params = [
+                'module' => 'ConversionApi',
+                'action' => 'siteEventSettings',
+                'idSite' => $idSite,
+                'updated' => 1
+            ];
+
+            // Use standard PHP function
+            $url = 'index.php?' . http_build_query($params);
+            Url::redirectToUrl($url);
+        }
+
+        // Render the settings form
+        return $this->renderTemplate('siteEventSettings', [
+            'settings' => $settings,
+            'idSite' => $idSite,
+            'siteName' => Site::getNameFor($idSite),
+            'updated' => Common::getRequestVar('updated', 0, 'int')
+        ]);
+    }
+
     private function processFormSubmission($settings)
     {
         // Meta API settings
@@ -142,6 +177,23 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
                 if (isset($settings->actionDimensions[$variable])) {
                     $settings->actionDimensions[$variable]->setValue($dimensionIndex);
                 }
+            }
+        }
+        // Save all settings
+        $settings->save();
+    }
+
+    /**
+     * Process form submission for event category settings
+     */
+    private function processEventCategoriesFormSubmission($settings)
+    {
+        $eventCategories = Common::getRequestVar('eventCategories', [], 'array');
+
+        // Update each event category setting
+        foreach ($eventCategories as $eventType => $categoryName) {
+            if (isset($settings->eventCategories[$eventType])) {
+                $settings->eventCategories[$eventType]->setValue(trim($categoryName));
             }
         }
 

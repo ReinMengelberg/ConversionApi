@@ -1,8 +1,8 @@
 <?php
 /**
- * Matomo - free/libre analytics platform
+ * ReinMengelberg/ConversionApi - A highly customizable Matomo plugin for integrating visits with conversion APIs.
  *
- * @link https://matomo.org
+ * @link https://github.com/ReinMengelberg/ConversionApi
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
  */
 

@@ -8,11 +8,8 @@
 
 namespace Piwik\Plugins\ConversionApi\Services\Visits;
 
-class VisitExpandService
+class VisitPrivacyService
 {
-    /**
-     * Constructor for VisitExpandService class
-     */
     public function __construct()
     {
     }

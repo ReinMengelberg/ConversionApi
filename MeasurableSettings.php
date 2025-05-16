@@ -60,6 +60,33 @@ class MeasurableSettings extends \Piwik\Settings\Measurable\MeasurableSettings
     /** @var array of Setting objects */
     public $actionDimensions = [];
 
+    /** @var array Standard event mappings - these are hardcoded */
+    private $standardEventNames = [
+        'lead' => [
+            'google' => 'generate_lead',
+            'meta' => 'Lead',
+            'linkedin' => 'Lead'
+        ],
+        'account' => [
+            'google' => 'sign_up',
+            'meta' => 'CompleteRegistration',
+            'linkedin' => 'Registration'
+        ],
+        'appointment' => [
+            'google' => 'schedule',
+            'meta' => 'Schedule',
+            'linkedin' => 'Appointment'
+        ],
+        'applicant' => [
+            'google' => 'submit_application',
+            'meta' => 'SubmitApplication',
+            'linkedin' => 'JobApply'
+        ]
+    ];
+
+    /** @var array Settings for event categories */
+    public $eventCategories = [];
+
     // Visit dimension variables
     private $visitVariables = [
         'userAgent',
@@ -101,6 +128,113 @@ class MeasurableSettings extends \Piwik\Settings\Measurable\MeasurableSettings
 
         // Initialize Custom Dimension Settings
         $this->initDimensionSettings();
+
+        // Initialize Event Category Settings
+        $this->initEventCategorySettings();
+    }
+
+    /**
+     * Initialize event category settings
+     */
+    private function initEventCategorySettings()
+    {
+        // For each standard event type, create a setting for the Matomo category name
+        foreach (array_keys($this->standardEventNames) as $eventType) {
+            $this->eventCategories[$eventType] = $this->createEventCategorySetting($eventType);
+        }
+    }
+
+    /**
+     * Create a setting for a specific event category
+     *
+     * @param string $eventType Standard event type (lead, account, etc.)
+     * @return Setting
+     */
+    private function createEventCategorySetting($eventType)
+    {
+        $title = $this->getEventTypeTitle($eventType);
+        $description = $this->getEventTypeDescription($eventType);
+
+        return $this->makeSetting(
+            'event_category_' . $eventType,
+            $eventType, // Default value is the same as the key
+            FieldConfig::TYPE_STRING,
+            function (FieldConfig $field) use ($title, $description, $eventType) {
+                $field->title = $title . ' Category';
+                $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
+                $field->description = "Matomo event category for " . strtolower($title);
+                $field->inlineHelp = $description;
+            }
+        );
+    }
+
+    /**
+     * Get human-readable title for an event type
+     */
+    private function getEventTypeTitle($eventType)
+    {
+        $titles = [
+            'lead' => 'Lead',
+            'account' => 'Account Registration',
+            'appointment' => 'Appointment',
+            'applicant' => 'Job Application',
+        ];
+
+        return isset($titles[$eventType]) ? $titles[$eventType] : ucfirst($eventType);
+    }
+
+    /**
+     * Get description for an event type
+     */
+    private function getEventTypeDescription($eventType)
+    {
+        $descriptions = [
+            'lead' => 'Category used when tracking lead form submissions',
+            'account' => 'Category used when tracking account registrations or sign-ups',
+            'appointment' => 'Category used when tracking appointment bookings or scheduling',
+            'applicant' => 'Category used when tracking job applications',
+        ];
+
+        return isset($descriptions[$eventType]) ? $descriptions[$eventType] : '';
+    }
+
+    /**
+     * Get standard event name for a given Matomo category and platform
+     *
+     * @param string $matomoCategory Matomo event category to look up
+     * @param string $platform Platform to get event name for (google, meta, linkedin)
+     * @return string|null Standard event name or null if not found
+     */
+    public function getStandardEventName($matomoCategory, $platform)
+    {
+        // First, check if this category directly matches any of our standard event types
+        foreach ($this->eventCategories as $eventType => $setting) {
+            if ($setting->getValue() === $matomoCategory) {
+                return $this->standardEventNames[$eventType][$platform] ?? null;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get all event mappings as an associative array
+     *
+     * @return array Associative array of Matomo category => [platform => event name]
+     */
+    public function getAllEventMappings()
+    {
+        $result = [];
+
+        foreach ($this->eventCategories as $eventType => $setting) {
+            $matomoCategory = $setting->getValue();
+
+            if (!empty($matomoCategory)) {
+                $result[$matomoCategory] = $this->standardEventNames[$eventType];
+            }
+        }
+
+        return $result;
     }
 
     /**

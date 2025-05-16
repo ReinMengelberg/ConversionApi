@@ -1,8 +1,8 @@
 <?php
 /**
- * Matomo - free/libre analytics platform
+ * ReinMengelberg/ConversionApi - A highly customizable Matomo plugin for integrating visits with conversion APIs.
  *
- * @link https://matomo.org
+ * @link https://github.com/ReinMengelberg/ConversionApi
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
  */
 
@@ -16,7 +16,7 @@ use Piwik\Plugins\ConversionApi\Services\Processors\GoogleProcessor;
 use Piwik\Plugins\ConversionApi\Services\Processors\LinkedinProcessor;
 use Piwik\Plugins\ConversionApi\Services\Processors\MetaProcessor;
 use Piwik\Plugins\ConversionApi\Services\Visits\VisitExpandService;
-use Piwik\Plugins\ConversionApi\Services\Visits\VisitHashService;
+use Piwik\Plugins\ConversionApi\Services\Visits\VisitPrivacyService;
 use Piwik\Plugins\ConversionApi\Services\Visits\VisitDataService;
 
 /**
@@ -26,7 +26,7 @@ class ConversionApiManager
 {
     private $logger;
     private $visitDataService;
-    private $visitHashService;
+    private $visitPrivacyService;
     private $visitExpandService;
     private $metaProcessor;
     private $googleProcessor;
@@ -39,24 +39,24 @@ class ConversionApiManager
      * @param LoggerInterface $logger
      * @param VisitDataService $visitDataService
      * @param VisitExpandService $visitExpandService
-     * @param VisitHashService $visitHashService
+     * @param VisitPrivacyService $visitPrivacyService
      * @param MetaProcessor $metaProcessor
      * @param GoogleProcessor $googleProcessor
      * @param LinkedinProcessor $linkedinProcessor
      */
     public function __construct(
-        LoggerInterface    $logger,
-        VisitDataService   $visitDataService,
-        VisitExpandService $visitExpandService,
-        VisitHashService   $visitHashService,
-        MetaProcessor      $metaProcessor,
-        GoogleProcessor    $googleProcessor,
-        LinkedinProcessor  $linkedinProcessor
+        LoggerInterface     $logger,
+        VisitDataService    $visitDataService,
+        VisitExpandService  $visitExpandService,
+        VisitPrivacyService $visitPrivacyService,
+        MetaProcessor       $metaProcessor,
+        GoogleProcessor     $googleProcessor,
+        LinkedinProcessor   $linkedinProcessor
     ) {
         $this->logger = $logger;
         $this->visitDataService = $visitDataService;
         $this->visitExpandService = $visitExpandService;
-        $this->visitHashService = $visitHashService;
+        $this->visitPrivacyService = $visitPrivacyService;
         $this->metaProcessor = $metaProcessor;
         $this->googleProcessor = $googleProcessor;
         $this->linkedinProcessor = $linkedinProcessor;
@@ -146,7 +146,7 @@ class ConversionApiManager
 //        $expandedData = $this->visitExpandService->expandVisits($visitData);
 
         // Pre-process data with hashing service
-//        $hashedData = $this->visitHashService->hashVisits($expandedData, $idSite);
+//        $hashedData = $this->visitPrivacyService->hashVisits($expandedData, $idSite);
 
         // Process Meta if enabled
 //        try {
