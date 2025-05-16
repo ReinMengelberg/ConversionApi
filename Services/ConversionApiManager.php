@@ -1,0 +1,316 @@
+<?php
+/**
+ * Matomo - free/libre analytics platform
+ *
+ * @link https://matomo.org
+ * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
+ */
+
+namespace Piwik\Plugins\ConversionApi\Services;
+
+use Piwik\Date;
+use Piwik\Log\LoggerInterface;
+use Piwik\Plugins\ConversionApi\Exceptions\MissingConfigurationException;
+use Piwik\Plugins\ConversionApi\MeasurableSettings;
+use Piwik\Plugins\ConversionApi\Services\Processors\GoogleProcessor;
+use Piwik\Plugins\ConversionApi\Services\Processors\LinkedinProcessor;
+use Piwik\Plugins\ConversionApi\Services\Processors\MetaProcessor;
+use Piwik\Plugins\ConversionApi\Services\Visits\VisitHashService;
+use Piwik\Plugins\ConversionApi\Services\Visits\VisitDataService;
+
+/**
+ * Manages conversion API integration
+ */
+class ConversionApiManager
+{
+    /**
+     * @var VisitDataService
+     */
+    private $visitDataService;
+
+    /**
+     * @var VisitHashService
+     */
+    private $visitHashService;
+
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
+     * @var MetaProcessor
+     */
+    private $metaProcessor;
+
+    /**
+     * @var GoogleProcessor
+     */
+    private $googleProcessor;
+
+    /**
+     * @var LinkedinProcessor
+     */
+    private $linkedinProcessor;
+
+    /**
+     * Constructor
+     *
+     * @param VisitDataService $visitDataService
+     * @param VisitHashService $visitHashService
+     * @param LoggerInterface $logger
+     * @param MetaProcessor $metaProcessor
+     * @param GoogleProcessor $googleProcessor
+     * @param LinkedinProcessor $linkedinProcessor
+     */
+    public function __construct(
+        VisitDataService  $visitDataService,
+        VisitHashService  $visitHashService,
+        LoggerInterface   $logger,
+        MetaProcessor     $metaProcessor,
+        GoogleProcessor   $googleProcessor,
+        LinkedinProcessor $linkedinProcessor
+    ) {
+        $this->visitDataService = $visitDataService;
+        $this->visitHashService = $visitHashService;
+        $this->logger = $logger;
+        $this->metaProcessor = $metaProcessor;
+        $this->googleProcessor = $googleProcessor;
+        $this->linkedinProcessor = $linkedinProcessor;
+    }
+
+    /**
+     * Check if conversion API integration is enabled for a site
+     *
+     * @param int $idSite
+     * @return bool
+     * @throws \Exception
+     */
+    public function isEnabledForSite($idSite): bool
+    {
+        $settings = new MeasurableSettings($idSite);
+
+        // Check if any of the platforms have synchronization enabled
+        $metaSyncEnabled = $settings->metaSyncVisits->getValue();
+        $googleSyncEnabled = $settings->googleSyncVisits->getValue();
+        $linkedinSyncEnabled = $settings->linkedinSyncVisits->getValue();
+
+        return $metaSyncEnabled || $googleSyncEnabled || $linkedinSyncEnabled;
+    }
+
+    /**
+     * Process all enabled APIs for a site
+     *
+     * @param int $idSite
+     * @param Date $startDate
+     * @param Date $endDate
+     * @throws MissingConfigurationException
+     * @throws \Exception
+     */
+    public function processData($idSite, $startDate, $endDate)
+    {
+        $settings = new MeasurableSettings($idSite);
+
+        // Skip if no integration is enabled for this site
+        if (!$this->isEnabledForSite($idSite)) {
+            return;
+        }
+
+        // Get conversion data
+        $visitData = $this->visitDataService->getVisits($idSite, $startDate, $endDate);
+
+        // If no conversions, nothing to do
+        if (empty($visitData)) {
+            $this->logger->info('ConversionApi: No visit data found for site {idSite} in the specified period', ['idSite' => $idSite]);
+            return;
+        }
+
+        // Pre-process data with hashing service
+        $hashedData = $this->visitHashService->hashVisits($visitData, $idSite);
+
+        // Process Meta if enabled
+        try {
+            if ($settings->metaSyncVisits->getValue() && $this->isMetaEnabled($settings)) {
+                $this->processMetaVisits($idSite, $hashedData, $settings);
+            }
+        } catch (MissingConfigurationException $e) {
+            $this->logger->warning('ConversionApi: {message} for site {idSite}. Skipping Meta integration.', [
+                'message' => $e->getMessage(),
+                'idSite' => $idSite
+            ]);
+        } catch (\Exception $e) {
+            $this->logger->error('ConversionApi: Error processing Meta integration for site {idSite}: {message}. Continuing with other integrations.', [
+                'idSite' => $idSite,
+                'message' => $e->getMessage()
+            ]);
+        }
+
+        // Process Google if enabled
+        try {
+            if ($settings->googleSyncVisits->getValue() && $this->isGoogleEnabled($settings)) {
+                $this->processGoogleVisits($idSite, $hashedData, $settings);
+            }
+        } catch (MissingConfigurationException $e) {
+            $this->logger->warning('ConversionApi: {message} for site {idSite}. Skipping Google integration.', [
+                'message' => $e->getMessage(),
+                'idSite' => $idSite
+            ]);
+        } catch (\Exception $e) {
+            $this->logger->error('ConversionApi: Error processing Google integration for site {idSite}: {message}. Continuing with other integrations.', [
+                'idSite' => $idSite,
+                'message' => $e->getMessage()
+            ]);
+        }
+
+        // Process LinkedIn if enabled
+        try {
+            if ($settings->linkedinSyncVisits->getValue() && $this->isLinkedinEnabled($settings)) {
+                $this->processLinkedinVisits($idSite, $hashedData, $settings);
+            }
+        } catch (MissingConfigurationException $e) {
+            $this->logger->warning('ConversionApi: {message} for site {idSite}. Skipping LinkedIn integration.', [
+                'message' => $e->getMessage(),
+                'idSite' => $idSite
+            ]);
+        } catch (\Exception $e) {
+            $this->logger->error('ConversionApi: Error processing LinkedIn integration for site {idSite}: {message}. Continuing with other integrations.', [
+                'idSite' => $idSite,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Process and send visits to Meta Conversion API
+     * 
+     * @param int $idSite
+     * @param array $hashedData
+     * @param MeasurableSettings $settings
+     */
+    private function processMetaVisits($idSite, $hashedData, $settings)
+    {
+        try {
+            $this->logger->info('ConversionApi: Sending visits to Meta Conversion API for site {idSite}', ['idSite' => $idSite]);
+            $this->metaProcessor->processVisits($idSite, $hashedData, $settings);
+        } catch (\Exception $e) {
+            $this->logger->error('ConversionApi: Error sending visits to Meta Conversion API: {message}', ['message' => $e->getMessage()]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Process and send visits to Google Ads API
+     * @param int $idSite
+     * @param array $hashedData
+     * @param MeasurableSettings $settings
+     */
+    private function processGoogleVisits($idSite, $hashedData, $settings)
+    {
+        try {
+            $this->logger->info('ConversionApi: Sending visits to Google Ads API for site {idSite}', ['idSite' => $idSite]);
+            $this->googleProcessor->processVisits($idSite, $hashedData, $settings);
+        } catch (\Exception $e) {
+            $this->logger->error('ConversionApi: Error sending visits to Google Ads API: {message}', ['message' => $e->getMessage()]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Process and send visits to LinkedIn Conversions API
+     *
+     * @param int $idSite
+     * @param array $hashedData
+     * @param MeasurableSettings $settings
+     */
+    private function processLinkedinVisits($idSite, $hashedData, $settings)
+    {
+        try {
+            $this->logger->info('ConversionApi: Sending visits to LinkedIn Conversions API for site {idSite}', ['idSite' => $idSite]);
+            $this->linkedinProcessor->processVisits($idSite, $hashedData, $settings);
+        } catch (\Exception $e) {
+            $this->logger->error('ConversionApi: Error sending visits to LinkedIn Conversions API: {message}', ['message' => $e->getMessage()]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Check if Meta integration is enabled and configured
+     *
+     * @param MeasurableSettings $settings
+     * @return bool
+     * @throws MissingConfigurationException
+     */
+    private function isMetaEnabled($settings)
+    {
+        if (!$settings->metaSyncVisits->getValue()) {
+            return false;
+        }
+        $missingFields = [];
+        if (empty($settings->metapixelId->getValue())) {
+            $missingFields[] = 'Meta Pixel ID';
+        }
+        if (empty($settings->metaAccessToken->getValue())) {
+            $missingFields[] = 'Meta Access Token';
+        }
+        if (!empty($missingFields)) {
+            throw new MissingConfigurationException('Meta', $missingFields);
+        }
+        return true;
+    }
+
+    /**
+     * Check if Google Ads integration is enabled and configured
+     *
+     * @param MeasurableSettings $settings
+     * @return bool
+     * @throws MissingConfigurationException
+     */
+    private function isGoogleEnabled($settings)
+    {
+        if (!$settings->googleSyncVisits->getValue()) {
+            return false;
+        }
+        $missingFields = [];
+        if (empty($settings->googleAdsDeveloperToken->getValue())) {
+            $missingFields[] = 'Google Ads Developer Token';
+        }
+        if (empty($settings->googleAdsClientId->getValue())) {
+            $missingFields[] = 'Google Ads Client ID';
+        }
+        if (empty($settings->googleAdsClientSecret->getValue())) {
+            $missingFields[] = 'Google Ads Client Secret';
+        }
+        if (empty($settings->googleAdsRefreshToken->getValue())) {
+            $missingFields[] = 'Google Ads Refresh Token';
+        }
+        if (!empty($missingFields)) {
+            throw new MissingConfigurationException('Google Ads', $missingFields);
+        }
+        return true;
+    }
+
+    /**
+     * Check if LinkedIn integration is enabled and configured
+     *
+     * @param MeasurableSettings $settings
+     * @return bool
+     * @throws MissingConfigurationException
+     */
+    private function isLinkedinEnabled($settings)
+    {
+        if (!$settings->linkedinSyncVisits->getValue()) {
+            return false;
+        }
+        $missingFields = [];
+        if (empty($settings->linkedinAccessToken->getValue())) {
+            $missingFields[] = 'LinkedIn Access Token';
+        }
+        if (empty($settings->linkedinAdAccountUrn->getValue())) {
+            $missingFields[] = 'LinkedIn Ad Account ID';
+        }
+        if (!empty($missingFields)) {
+            throw new MissingConfigurationException('LinkedIn', $missingFields);
+        }
+        return true;
+    }
+}

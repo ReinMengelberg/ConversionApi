@@ -1,0 +1,418 @@
+{# plugins/ConversionApi/templates/siteSettings.twig #}
+{% extends 'admin.twig' %}
+
+{% block content %}
+    <div class="settings-header">
+        <div class="settings-header-container">
+            <div class="settings-breadcrumb">
+                <a href="{{ linkTo({module: 'ConversionApi', action: 'index'}) }}" class="btn-back">
+                    <span class="icon-arrow-left"></span>
+                    <span>Back to Sites</span>
+                </a>
+            </div>
+            <div class="settings-title-container">
+                <h1 class="settings-title">Conversion API Settings</h1>
+                <div class="site-identifier">
+                    <span class="icon-website"></span>
+                    <span class="site-name">{{ siteName }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-content">
+        {% if updated is defined and updated %}
+            <div piwik-notification context="success">
+                Settings successfully saved.
+            </div>
+        {% endif %}
+
+        <form method="post" action="{{ linkTo({module: 'ConversionApi', action: 'siteSettings', idSite: idSite}) }}" id="metaConversionApiForm">
+            <input type="hidden" name="submitted" value="true" />
+
+            <!-- Meta API Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Meta Conversion API Credentials</h3>
+                </div>
+                <div class="card-content">
+                    <div class="form-group">
+                        <label class="form-check-label">
+                            <input type="checkbox"
+                                   class="form-check-input"
+                                   id="meta_sync_visits"
+                                   name="meta_sync_visits"
+                                   value="1"
+                                   {% if settings.metaSyncVisits.getValue() %}checked="checked"{% endif %} />
+                            <span>Sync Visits to Meta</span>
+                        </label>
+                        <div class="form-text text-muted">Automatically sync visit data to Meta's Conversion API</div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">{{ settings.metapixelId.configureField.title }}</label>
+                        <div class="col-sm-9">
+                            <input type="text"
+                                   id="meta_pixel_id"
+                                   name="meta_pixel_id"
+                                   class="form-control"
+                                   value="{{ settings.metapixelId.getValue() }}" />
+                            <div class="form-text text-muted">{{ settings.metapixelId.configureField.inlineHelp }}</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">{{ settings.metaAccessToken.configureField.title }}</label>
+                        <div class="col-sm-9">
+                            <input type="password"
+                                   id="meta_access_token"
+                                   name="meta_access_token"
+                                   class="form-control"
+                                   value="{{ settings.metaAccessToken.getValue() }}" />
+                            <div class="form-text text-muted">{{ settings.metaAccessToken.configureField.inlineHelp }}</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">{{ settings.metatestEventCode.configureField.title }}</label>
+                        <div class="col-sm-9">
+                            <input type="text"
+                                   id="meta_test_event_code"
+                                   name="meta_test_event_code"
+                                   class="form-control"
+                                   value="{{ settings.metatestEventCode.getValue() }}" />
+                            <div class="form-text text-muted">{{ settings.metatestEventCode.configureField.inlineHelp }}</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">{{ settings.metaGraphApiVersion.configureField.title }}</label>
+                        <div class="col-sm-9">
+                            <input type="text"
+                                   id="meta_graph_api_version"
+                                   name="meta_graph_api_version"
+                                   class="form-control"
+                                   value="{{ settings.metaGraphApiVersion.getValue() }}" />
+                            <div class="form-text text-muted">{{ settings.metaGraphApiVersion.configureField.inlineHelp }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Google API Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Google Ads API Credentials</h3>
+                </div>
+                <div class="card-content">
+                    <div class="form-group">
+                        <label class="form-check-label">
+                            <input type="checkbox"
+                                   class="form-check-input"
+                                   id="google_sync_visits"
+                                   name="google_sync_visits"
+                                   value="1"
+                                   {% if settings.googleSyncVisits.getValue() %}checked="checked"{% endif %} />
+                            <span>Sync Visits to Google</span>
+                        </label>
+                        <div class="form-text text-muted">Automatically sync visit data to Google's Ads API</div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">{{ settings.googleAdsDeveloperToken.configureField.title }}</label>
+                        <div class="col-sm-9">
+                            <input type="password"
+                                   id="google_ads_developer_token"
+                                   name="google_ads_developer_token"
+                                   class="form-control"
+                                   value="{{ settings.googleAdsDeveloperToken.getValue() }}" />
+                            <div class="form-text text-muted">{{ settings.googleAdsDeveloperToken.configureField.inlineHelp }}</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">{{ settings.googleAdsClientId.configureField.title }}</label>
+                        <div class="col-sm-9">
+                            <input type="text"
+                                   id="google_ads_client_id"
+                                   name="google_ads_client_id"
+                                   class="form-control"
+                                   value="{{ settings.googleAdsClientId.getValue() }}" />
+                            <div class="form-text text-muted">{{ settings.googleAdsClientId.configureField.inlineHelp }}</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">{{ settings.googleAdsClientSecret.configureField.title }}</label>
+                        <div class="col-sm-9">
+                            <input type="password"
+                                   id="google_ads_client_secret"
+                                   name="google_ads_client_secret"
+                                   class="form-control"
+                                   value="{{ settings.googleAdsClientSecret.getValue() }}" />
+                            <div class="form-text text-muted">{{ settings.googleAdsClientSecret.configureField.inlineHelp }}</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">{{ settings.googleAdsRefreshToken.configureField.title }}</label>
+                        <div class="col-sm-9">
+                            <input type="password"
+                                   id="google_ads_refresh_token"
+                                   name="google_ads_refresh_token"
+                                   class="form-control"
+                                   value="{{ settings.googleAdsRefreshToken.getValue() }}" />
+                            <div class="form-text text-muted">{{ settings.googleAdsRefreshToken.configureField.inlineHelp }}</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">{{ settings.googleAdsLoginCustomerId.configureField.title }}</label>
+                        <div class="col-sm-9">
+                            <input type="text"
+                                   id="google_ads_login_customer_id"
+                                   name="google_ads_login_customer_id"
+                                   class="form-control"
+                                   value="{{ settings.googleAdsLoginCustomerId.getValue() }}" />
+                            <div class="form-text text-muted">{{ settings.googleAdsLoginCustomerId.configureField.inlineHelp }}</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">{{ settings.googleAdsApiVersion.configureField.title }}</label>
+                        <div class="col-sm-9">
+                            <input type="text"
+                                   id="google_ads_api_version"
+                                   name="google_ads_api_version"
+                                   class="form-control"
+                                   value="{{ settings.googleAdsApiVersion.getValue() }}" />
+                            <div class="form-text text-muted">{{ settings.googleAdsApiVersion.configureField.inlineHelp }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LinkedIn API Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">LinkedIn Conversions API Credentials</h3>
+                </div>
+                <div class="card-content">
+                    <div class="form-group">
+                        <label class="form-check-label">
+                            <input type="checkbox"
+                                   class="form-check-input"
+                                   id="linkedin_sync_visits"
+                                   name="linkedin_sync_visits"
+                                   value="1"
+                                   {% if settings.linkedinSyncVisits.getValue() %}checked="checked"{% endif %} />
+                            <span>Sync Visits to LinkedIn</span>
+                        </label>
+                        <div class="form-text text-muted">Automatically sync visit data to LinkedIn's Conversion API</div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">{{ settings.linkedinAccessToken.configureField.title }}</label>
+                        <div class="col-sm-9">
+                            <input type="password"
+                                   id="linkedin_access_token"
+                                   name="linkedin_access_token"
+                                   class="form-control"
+                                   value="{{ settings.linkedinAccessToken.getValue() }}" />
+                            <div class="form-text text-muted">{{ settings.linkedinAccessToken.configureField.inlineHelp }}</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">{{ settings.linkedinAdAccountUrn.configureField.title }}</label>
+                        <div class="col-sm-9">
+                            <input type="text"
+                                   id="linkedin_ad_account_id"
+                                   name="linkedin_ad_account_id"
+                                   class="form-control"
+                                   value="{{ settings.linkedinAdAccountUrn.getValue() }}" />
+                            <div class="form-text text-muted">{{ settings.linkedinAdAccountUrn.configureField.inlineHelp }}</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">{{ settings.linkedinApiVersion.configureField.title }}</label>
+                        <div class="col-sm-9">
+                            <input type="text"
+                                   id="linkedin_api_version"
+                                   name="linkedin_api_version"
+                                   class="form-control"
+                                   value="{{ settings.linkedinApiVersion.getValue() }}" />
+                            <div class="form-text text-muted">{{ settings.linkedinApiVersion.configureField.inlineHelp }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <input type="submit" class="btn btn-primary" value="Save Changes" />
+                <a href="{{ linkTo({module: 'ConversionApi', action: 'index'}) }}" class="btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <style>
+        /* Header and Navigation Styles */
+        .settings-header {
+            background: linear-gradient(to right, #2C3E50, #4CA1AF);
+            color: #fff;
+            padding: 0;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .settings-header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .settings-breadcrumb {
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+
+        .btn-back {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+            padding: 6px 12px;
+            width: fit-content;
+        }
+
+        .btn-back:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .btn-back .icon-arrow-left {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .settings-title-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+        }
+
+        .settings-title {
+            font-size: 24px;
+            font-weight: 500;
+            margin: 0;
+            color: #fff;
+        }
+
+        .site-identifier {
+            display: flex;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+
+        .site-identifier .icon-website {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .site-name {
+            font-weight: 500;
+        }
+
+        .settings-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Card Styles */
+        .card {
+            border: none;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-header {
+            background-color: #f9f9f9;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .card-content {
+            padding: 20px;
+            background-color: #fff;
+        }
+
+        /* Form Styles */
+        .form-actions {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background-color: #1E66FF;
+            border-color: #1E66FF;
+            color: #fff;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #0047E1;
+            border-color: #0047E1;
+            color: #fff;
+        }
+
+        .form-text {
+            margin-top: 5px;
+            font-size: 0.85em;
+            color: #777;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .settings-title-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .site-identifier {
+                margin-top: 10px;
+            }
+
+            .settings-title {
+                font-size: 20px;
+            }
+        }
+    </style>
+{% endblock %}

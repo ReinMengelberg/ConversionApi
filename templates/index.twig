@@ -1,0 +1,232 @@
+{# plugins/ConversionApi/templates/index.twig #}
+{% extends 'admin.twig' %}
+
+{% block content %}
+    <div class="settings-header">
+        <div class="settings-header-container">
+            <div class="settings-title-container">
+                <h1 class="settings-title">Conversion API Settings</h1>
+                <div class="subtitle">Configure API connections for your websites</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-content">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Select a website to configure</h3>
+            </div>
+            <div class="card-content">
+                <div class="table-container">
+                    <table class="dataTable entityTable">
+                        <thead>
+                        <tr>
+                            <th>Website</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for site in sites %}
+                            <tr>
+                                <td>
+                                    <div class="site-name-container">
+                                        <span class="icon-website"></span>
+                                        <span class="site-name">{{ site.name }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-right">
+                                    <a href="{{ linkTo({module: 'ConversionApi', action: 'siteSettings', idSite: site.idsite}) }}"
+                                       class="btn-action">
+                                        <span>Configure</span>
+                                        <span class="icon-arrow-right"></span>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Header and Navigation Styles */
+        .settings-header {
+            background: linear-gradient(to right, #2C3E50, #4CA1AF);
+            color: #fff;
+            padding: 0;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .settings-header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .settings-title-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+        }
+
+        .settings-title {
+            font-size: 24px;
+            font-weight: 500;
+            margin: 0;
+            color: #fff;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+
+        .settings-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Card Styles */
+        .card {
+            border: none;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-header {
+            background-color: #f9f9f9;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .card-content {
+            padding: 20px;
+            background-color: #fff;
+        }
+
+        /* Table Styles */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .dataTable {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .dataTable th {
+            text-align: left;
+            padding: 12px 15px;
+            background-color: #f5f5f5;
+            color: #333;
+            font-weight: 500;
+            border-bottom: 1px solid #eee;
+        }
+
+        .dataTable td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
+        }
+
+        .dataTable tr:last-child td {
+            border-bottom: none;
+        }
+
+        .dataTable tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .text-right {
+            text-align: right;
+            justify-content: flex-end;
+        }
+
+        /* Site and Action Styles */
+        .site-name-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .site-name-container .icon-website {
+            margin-right: 10px;
+            color: #666;
+        }
+
+        .site-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            background-color: #1E66FF;
+            color: #fff;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .btn-action:hover {
+            background-color: #0047E1;
+        }
+
+        .btn-action span {
+            display: inline-block;
+            color: #fff;
+        }
+
+        .btn-action .icon-arrow-right {
+            margin-left: 8px;
+            font-size: 12px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .settings-title-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .subtitle {
+                margin-top: 10px;
+            }
+
+            .settings-title {
+                font-size: 20px;
+            }
+
+            .dataTable th,
+            .dataTable td {
+                padding: 10px;
+            }
+        }
+    </style>
+{% endblock %}
