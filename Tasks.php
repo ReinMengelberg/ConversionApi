@@ -54,13 +54,13 @@ class Tasks extends \Piwik\Plugin\Tasks
     public function schedule()
     {
         // Process conversion data hourly
-        $this->hourly('processVisitDataV2', null, self::HIGH_PRIORITY, 60);
+        $this->hourly('processVisitData', null, self::HIGH_PRIORITY, 60);
     }
 
     /**
      * Process conversion data for all sites
      */
-    public function processVisitDataV2()
+    public function processVisitData()
     {
         // Set a timeout to prevent indefinite hanging
         $startTime = time();

@@ -16,7 +16,7 @@ use Piwik\Plugins\ConversionApi\Services\Processors\GoogleProcessor;
 use Piwik\Plugins\ConversionApi\Services\Processors\LinkedinProcessor;
 use Piwik\Plugins\ConversionApi\Services\Processors\MetaProcessor;
 use Piwik\Plugins\ConversionApi\Services\Visits\VisitExpandService;
-use Piwik\Plugins\ConversionApi\Services\Visits\VisitPrivacyService;
+use Piwik\Plugins\ConversionApi\Services\Visits\VisitHashService;
 use Piwik\Plugins\ConversionApi\Services\Visits\VisitDataService;
 
 /**
@@ -26,7 +26,7 @@ class ConversionApiManager
 {
     private $logger;
     private $visitDataService;
-    private $visitPrivacyService;
+    private $visitHashService;
     private $visitExpandService;
     private $metaProcessor;
     private $googleProcessor;
@@ -39,24 +39,24 @@ class ConversionApiManager
      * @param LoggerInterface $logger
      * @param VisitDataService $visitDataService
      * @param VisitExpandService $visitExpandService
-     * @param VisitPrivacyService $visitPrivacyService
+     * @param VisitHashService $visitHashService
      * @param MetaProcessor $metaProcessor
      * @param GoogleProcessor $googleProcessor
      * @param LinkedinProcessor $linkedinProcessor
      */
     public function __construct(
-        LoggerInterface     $logger,
-        VisitDataService    $visitDataService,
-        VisitExpandService  $visitExpandService,
-        VisitPrivacyService $visitPrivacyService,
-        MetaProcessor       $metaProcessor,
-        GoogleProcessor     $googleProcessor,
-        LinkedinProcessor   $linkedinProcessor
+        LoggerInterface    $logger,
+        VisitDataService   $visitDataService,
+        VisitExpandService $visitExpandService,
+        VisitHashService   $visitHashService,
+        MetaProcessor      $metaProcessor,
+        GoogleProcessor    $googleProcessor,
+        LinkedinProcessor  $linkedinProcessor
     ) {
         $this->logger = $logger;
         $this->visitDataService = $visitDataService;
         $this->visitExpandService = $visitExpandService;
-        $this->visitPrivacyService = $visitPrivacyService;
+        $this->visitHashService = $visitHashService;
         $this->metaProcessor = $metaProcessor;
         $this->googleProcessor = $googleProcessor;
         $this->linkedinProcessor = $linkedinProcessor;
@@ -108,14 +108,12 @@ class ConversionApiManager
             return;
         }
 
-        $this->logger->info('ConversionApi: Found {count} visits for site {idSite}', [
-            'count' => count($visitData),
-            'idSite' => $idSite
-        ]);
+//         Pre-process data with expanding service
+        $expandedData = $this->visitExpandService->expandVisits($visitData, $idSite);
 
         // Logging function
-        if (isset($visitData[0])) {
-            $firstVisit = $visitData[0];
+        if (isset($expandedData[0])) {
+            $firstVisit = $expandedData[0];
 
             // Sanitize function
             $sanitize = function($data) use (&$sanitize) {
@@ -142,11 +140,8 @@ class ConversionApiManager
             $this->logger->info('ConversionApi: DEBUG - Visit structure written to ' . $debugFile);
         }
 
-        // Pre-process data with expanding service
-//        $expandedData = $this->visitExpandService->expandVisits($visitData);
-
         // Pre-process data with hashing service
-//        $hashedData = $this->visitPrivacyService->hashVisits($expandedData, $idSite);
+//        $hashedData = $this->visitHashService->hashVisits($expandedData, $idSite);
 
         // Process Meta if enabled
 //        try {

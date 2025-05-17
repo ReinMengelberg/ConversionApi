@@ -41,7 +41,7 @@
                     <div class="form-group">
                         <label class="form-group-label">Event ID Source</label>
                         <div class="radio-options">
-                            <div class="radio-option">
+                            <div class="radio-option {% if settings.eventIdSource.getValue() == 'event_name' or settings.eventIdSource.getValue() is empty %}selected{% endif %}">
                                 <input type="radio"
                                        id="event_id_source_event_name"
                                        name="event_id_source"
@@ -50,7 +50,8 @@
                                 <label for="event_id_source_event_name">Use Event Name</label>
                                 <div class="radio-help">The event name will be used as the Event ID</div>
                             </div>
-                            <div class="radio-option">
+
+                            <div class="radio-option {% if settings.eventIdSource.getValue() == 'custom_dimension' %}selected{% endif %}">
                                 <input type="radio"
                                        id="event_id_source_custom_dimension"
                                        name="event_id_source"
@@ -62,7 +63,7 @@
                         </div>
                     </div>
 
-                    <div id="custom_dimension_container" class="form-group" {% if settings.eventIdSource.getValue() != 'custom_dimension' %}style="display: none;"{% endif %}>
+                    <div id="custom_dimension_container" class="form-group dependent-field {% if settings.eventIdSource.getValue() == 'custom_dimension' %}active{% endif %}" {% if settings.eventIdSource.getValue() != 'custom_dimension' %}style="display: none;"{% endif %}>
                         <label for="event_id_custom_dimension">Custom Dimension Index</label>
                         <div class="form-input-container">
                             <input type="number"
@@ -105,80 +106,80 @@
                         <div id="mappings-container">
                             <!-- Lead mapping -->
                             <div class="form-table-row mapping-row">
-                                <div class="form-table-cell">
+                                <div class="form-table-cell" data-label="Matomo Event Category">
                                     <input type="text"
                                            name="eventCategories[lead]"
                                            class="form-control"
                                            value="{{ settings.eventCategories.lead.getValue() }}"
                                            placeholder="Matomo category for leads" />
                                 </div>
-                                <div class="form-table-cell">
+                                <div class="form-table-cell" data-label="Google Event Name">
                                     <div class="platform-event-name">generate_lead</div>
                                 </div>
-                                <div class="form-table-cell">
+                                <div class="form-table-cell" data-label="Meta Event Name">
                                     <div class="platform-event-name">Lead</div>
                                 </div>
-                                <div class="form-table-cell">
+                                <div class="form-table-cell" data-label="LinkedIn Event Name">
                                     <div class="platform-event-name">Lead</div>
                                 </div>
                             </div>
 
                             <!-- Account mapping -->
                             <div class="form-table-row mapping-row">
-                                <div class="form-table-cell">
+                                <div class="form-table-cell" data-label="Matomo Event Category">
                                     <input type="text"
                                            name="eventCategories[account]"
                                            class="form-control"
                                            value="{{ settings.eventCategories.account.getValue() }}"
                                            placeholder="Matomo category for account creation" />
                                 </div>
-                                <div class="form-table-cell">
+                                <div class="form-table-cell" data-label="Google Event Name">
                                     <div class="platform-event-name">sign_up</div>
                                 </div>
-                                <div class="form-table-cell">
+                                <div class="form-table-cell" data-label="Meta Event Name">
                                     <div class="platform-event-name">CompleteRegistration</div>
                                 </div>
-                                <div class="form-table-cell">
+                                <div class="form-table-cell" data-label="LinkedIn Event Name">
                                     <div class="platform-event-name">Registration</div>
                                 </div>
                             </div>
 
                             <!-- Appointment mapping -->
                             <div class="form-table-row mapping-row">
-                                <div class="form-table-cell">
+                                <div class="form-table-cell" data-label="Matomo Event Category">
                                     <input type="text"
                                            name="eventCategories[appointment]"
                                            class="form-control"
                                            value="{{ settings.eventCategories.appointment.getValue() }}"
                                            placeholder="Matomo category for appointments" />
                                 </div>
-                                <div class="form-table-cell">
+                                <div class="form-table-cell" data-label="Google Event Name">
                                     <div class="platform-event-name">schedule</div>
                                 </div>
-                                <div class="form-table-cell">
+                                <div class="form-table-cell" data-label="Meta Event Name">
                                     <div class="platform-event-name">Schedule</div>
                                 </div>
-                                <div class="form-table-cell">
+                                <div class="form-table-cell" data-label="LinkedIn Event Name">
                                     <div class="platform-event-name">Appointment</div>
                                 </div>
                             </div>
 
                             <!-- Applicant mapping -->
                             <div class="form-table-row mapping-row">
-                                <div class="form-table-cell">
+                                <div class="form-table-cell" data-label="Matomo Event Category">
                                     <input type="text"
                                            name="eventCategories[applicant]"
                                            class="form-control"
                                            value="{{ settings.eventCategories.applicant.getValue() }}"
                                            placeholder="Matomo category for job applications" />
                                 </div>
-                                <div class="form-table-cell">
+                                <div class="form-table-cell" data-label="Google Event Name">
                                     <div class="platform-event-name">submit_application</div>
                                 </div>
-                                <div class="form-table-cell">
+                                <div class="form-table-cell" data-label="Meta Event Name">
                                     <div class="platform-event-name">SubmitApplication</div>
                                 </div>
-                                <div class="form-table-cell">
+                                <div class="form-table-cell" data-label="LinkedIn Event Name">
                                     <div class="platform-event-name">JobApply</div>
                                 </div>
                             </div>
@@ -338,13 +339,21 @@
 
         .radio-option {
             margin-bottom: 12px;
-            padding: 10px;
-            border-radius: 4px;
-            transition: background-color 0.2s;
+            padding: 12px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            background-color: #f9f9f9;
+        }
+
+        .radio-option.selected {
+            border-color: #1E66FF;
+            background-color: rgba(30, 102, 255, 0.05);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .radio-option:hover {
-            background-color: #f9f9f9;
+            background-color: #f0f0f0;
         }
 
         .radio-option input[type="radio"] {
@@ -354,6 +363,7 @@
         .radio-option label {
             font-weight: 500;
             cursor: pointer;
+            font-size: 15px;
         }
 
         .radio-help {
@@ -362,6 +372,21 @@
             font-size: 0.9em;
             margin-top: 3px;
         }
+
+        /* Dependent field styling */
+        .dependent-field {
+            margin-left: 24px;
+            padding-left: 15px;
+            border-left: 3px solid #1E66FF;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+
+        .dependent-field.active {
+            opacity: 1;
+        }
+
+        /* Current config summary styles removed */
 
         .form-input-container {
             max-width: 300px;
@@ -500,7 +525,6 @@
             background-color: #1E66FF;
             border-color: #1E66FF;
             color: #fff;
-            transition: all 0.2s ease;
         }
 
         .btn-primary:hover {
@@ -539,17 +563,35 @@
                 display: block;
                 margin-bottom: 5px;
             }
+
+            .settings-title-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .site-identifier {
+                margin-top: 10px;
+            }
+
+            .settings-title {
+                font-size: 20px;
+            }
         }
     </style>
 
     <script>
         $(document).ready(function() {
-            // Toggle custom dimension field visibility
+            // Toggle custom dimension field visibility and update UI
             $('input[name="event_id_source"]').on('change', function() {
+                // Update selected state for styling
+                $('.radio-option').removeClass('selected');
+                $(this).closest('.radio-option').addClass('selected');
+
+                // Show/hide custom dimension field
                 if ($(this).val() === 'custom_dimension') {
-                    $('#custom_dimension_container').show();
+                    $('#custom_dimension_container').show().addClass('active');
                 } else {
-                    $('#custom_dimension_container').hide();
+                    $('#custom_dimension_container').hide().removeClass('active');
                 }
             });
 

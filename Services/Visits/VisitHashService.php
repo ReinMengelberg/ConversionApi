@@ -8,7 +8,7 @@
 
 namespace Piwik\Plugins\ConversionApi\Services\Visits;
 
-class VisitPrivacyService
+class VisitHashService
 {
     public function __construct()
     {
