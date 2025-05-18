@@ -217,6 +217,18 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
                 }
             }
         }
+
+        // Process Transformation Settings
+        if ($transformations = Common::getRequestVar('transformations', [], 'array')) {
+            foreach ($transformations as $variable => $value) {
+                $settingName = 'transform_' . $variable;
+                // Only set if the setting exists
+                if (isset($settings->transformations[$variable])) {
+                    $settings->transformations[$variable]->setValue($value);
+                }
+            }
+        }
+
         // Save all settings
         $settings->save();
     }

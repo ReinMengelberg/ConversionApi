@@ -69,8 +69,7 @@
             "title": "Event",
             "subtitle": "Category: \"Movies', Action: \"play\"",
             "eventName": "Movie Name",
-            "dimension2": null,
-            "eventId": null
+            "dimension2": null
         },
         {
             "type": "action",

@@ -18,6 +18,7 @@ use Piwik\Plugins\ConversionApi\Services\Processors\MetaProcessor;
 use Piwik\Plugins\ConversionApi\Services\Visits\VisitExpandService;
 use Piwik\Plugins\ConversionApi\Services\Visits\VisitHashService;
 use Piwik\Plugins\ConversionApi\Services\Visits\VisitDataService;
+use Piwik\Plugins\ConversionApi\Services\Visits\VisitTransformService;
 
 /**
  * Manages conversion API integration
@@ -26,8 +27,9 @@ class ConversionApiManager
 {
     private $logger;
     private $visitDataService;
-    private $visitHashService;
     private $visitExpandService;
+    private $visitTransformService;
+    private $visitHashService;
     private $metaProcessor;
     private $googleProcessor;
     private $linkedinProcessor;
@@ -39,6 +41,7 @@ class ConversionApiManager
      * @param LoggerInterface $logger
      * @param VisitDataService $visitDataService
      * @param VisitExpandService $visitExpandService
+     * @param VisitTransformService $visitTransformService
      * @param VisitHashService $visitHashService
      * @param MetaProcessor $metaProcessor
      * @param GoogleProcessor $googleProcessor
@@ -48,6 +51,7 @@ class ConversionApiManager
         LoggerInterface    $logger,
         VisitDataService   $visitDataService,
         VisitExpandService $visitExpandService,
+        VisitTransformService $visitTransformService,
         VisitHashService   $visitHashService,
         MetaProcessor      $metaProcessor,
         GoogleProcessor    $googleProcessor,
@@ -56,6 +60,7 @@ class ConversionApiManager
         $this->logger = $logger;
         $this->visitDataService = $visitDataService;
         $this->visitExpandService = $visitExpandService;
+        $this->visitTransformService = $visitTransformService;
         $this->visitHashService = $visitHashService;
         $this->metaProcessor = $metaProcessor;
         $this->googleProcessor = $googleProcessor;
@@ -159,8 +164,11 @@ class ConversionApiManager
             $this->logger->info('ConversionApi: DEBUG - Visit structure written to ' . $debugFile);
         }
 
-        // Pre-process data with hashing service
-//        $hashedData = $this->visitHashService->hashVisits($expandedData, $idSite);
+        // Pre-process data with transforming service
+        $transformedData = $this->visitTransformService->transformVisits($expandedData, $idSite);
+
+        // Pre-process data with hasing service
+        $hashedData = $this->visitHashService->hashVisits($transformedData, $idSite);
 
         // Process Meta if enabled
 //        try {
@@ -216,7 +224,7 @@ class ConversionApiManager
 
     /**
      * Process and send visits to Meta Conversion API
-     * 
+     *
      * @param int $idSite
      * @param array $hashedData
      * @param MeasurableSettings $settings

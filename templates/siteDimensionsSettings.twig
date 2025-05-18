@@ -106,6 +106,111 @@
 
                         <div class="form-table-row">
                             <div class="form-table-cell form-label-cell">
+                                <label for="birthDateValue_dimension">Birth Date Value (birthDateValue)</label>
+                                <div class="form-help">User's birth date captured from forms or user input</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="birthDateValue_dimension"
+                                       name="visit_dimensions[birthDateValue]"
+                                       class="form-control"
+                                       min="1"
+                                       value="{{ settings.visitDimensions['birthDateValue'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
+                                <label for="genderValue_dimension">Gender Value (genderValue)</label>
+                                <div class="form-help">User's gender captured from forms or user input</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="genderValue_dimension"
+                                       name="visit_dimensions[genderValue]"
+                                       class="form-control"
+                                       min="1"
+                                       value="{{ settings.visitDimensions['genderValue'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
+                                <label for="addressValue_dimension">Address Value (addressValue)</label>
+                                <div class="form-help">User's address captured from forms or user input</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="addressValue_dimension"
+                                       name="visit_dimensions[addressValue]"
+                                       class="form-control"
+                                       min="1"
+                                       value="{{ settings.visitDimensions['addressValue'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
+                                <label for="addressValue_dimension">City Value (cityValue)</label>
+                                <div class="form-help">User's address captured from forms or user input (will default to city)</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="addressValue_dimension"
+                                       name="visit_dimensions[addressValue]"
+                                       class="form-control"
+                                       min="1"
+                                       value="{{ settings.visitDimensions['addressValue'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
+                                <label for="regionValue_dimension">Region Value (regionValue)</label>
+                                <div class="form-help">User's region or state captured from forms or user input. (Will default to region)</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="regionValue_dimension"
+                                       name="visit_dimensions[regionValue]"
+                                       class="form-control"
+                                       min="1"
+                                       value="{{ settings.visitDimensions['regionValue'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
+                                <label for="zipValue_dimension">Zip/Postal Code Value (zipValue)</label>
+                                <div class="form-help">User's zip or postal code captured from forms or user input</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="zipValue_dimension"
+                                       name="visit_dimensions[zipValue]"
+                                       class="form-control"
+                                       min="1"
+                                       value="{{ settings.visitDimensions['zipValue'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
+                                <label for="countryValue_dimension">Country Value (countryValue)</label>
+                                <div class="form-help">User's country captured from forms or user input in ISO 3166-1 alpha-2. (Will default to countryCode)</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="countryValue_dimension"
+                                       name="visit_dimensions[countryValue]"
+                                       class="form-control"
+                                       min="1"
+                                       value="{{ settings.visitDimensions['countryValue'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
                                 <label for="fbc_dimension">Facebook Click ID (_fbc)</label>
                                 <div class="form-help">Facebook click identifier for ad attribution</div>
                             </div>
@@ -187,6 +292,38 @@
                         </div>
                     </div>
                     #}
+                </div>
+            </div>
+
+            <!-- Dimension Transformations Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Dimension Transformations</h3>
+                </div>
+                <div class="card-content">
+                    <p class="description">Configure how dimension values are processed before storage</p>
+
+                    <div class="transformation-section">
+                        <h4>Phone Number Formatting</h4>
+                        <p class="section-description">Configure how phone numbers are parsed and formatted</p>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
+                                <label for="phoneValueCountryCode">Default Country Code</label>
+                                <div class="form-help">Default country dialing code for phone numbers without international prefix (e.g., 1 for US, 31 for Netherlands)</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="phoneValueCountryCode"
+                                       name="transformations[phoneValueCountryCode]"
+                                       class="form-control"
+                                       placeholder="1"
+                                       min="1"
+                                       max="999"
+                                       value="{{ settings.transformations['phoneValueCountryCode'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -378,6 +515,24 @@
             border-color: #1E66FF;
             outline: none;
             box-shadow: 0 0 0 2px rgba(30, 102, 255, 0.2);
+        }
+
+        /* Transformation Section */
+        .transformation-section {
+            margin-bottom: 25px;
+        }
+
+        .transformation-section h4 {
+            font-size: 16px;
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #444;
+        }
+
+        .section-description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
         }
 
         /* Form Action Styles */
