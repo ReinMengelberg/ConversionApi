@@ -18,7 +18,7 @@ use Piwik\Plugins\ConversionApi\Services\Processors\MetaProcessor;
 use Piwik\Plugins\ConversionApi\Services\Visits\VisitExpandService;
 use Piwik\Plugins\ConversionApi\Services\Visits\VisitHashService;
 use Piwik\Plugins\ConversionApi\Services\Visits\VisitDataService;
-use Piwik\Plugins\ConversionApi\Services\Visits\VisitTransformService;
+use Piwik\Plugins\ConversionApi\Services\Visits\VisitFormatService;
 
 /**
  * Manages conversion API integration
@@ -28,7 +28,7 @@ class ConversionApiManager
     private $logger;
     private $visitDataService;
     private $visitExpandService;
-    private $visitTransformService;
+    private $visitFormatService;
     private $visitHashService;
     private $metaProcessor;
     private $googleProcessor;
@@ -41,7 +41,7 @@ class ConversionApiManager
      * @param LoggerInterface $logger
      * @param VisitDataService $visitDataService
      * @param VisitExpandService $visitExpandService
-     * @param VisitTransformService $visitTransformService
+     * @param VisitFormatService $visitFormatService
      * @param VisitHashService $visitHashService
      * @param MetaProcessor $metaProcessor
      * @param GoogleProcessor $googleProcessor
@@ -51,7 +51,7 @@ class ConversionApiManager
         LoggerInterface    $logger,
         VisitDataService   $visitDataService,
         VisitExpandService $visitExpandService,
-        VisitTransformService $visitTransformService,
+        VisitFormatService $visitFormatService,
         VisitHashService   $visitHashService,
         MetaProcessor      $metaProcessor,
         GoogleProcessor    $googleProcessor,
@@ -60,7 +60,7 @@ class ConversionApiManager
         $this->logger = $logger;
         $this->visitDataService = $visitDataService;
         $this->visitExpandService = $visitExpandService;
-        $this->visitTransformService = $visitTransformService;
+        $this->visitFormatService = $visitFormatService;
         $this->visitHashService = $visitHashService;
         $this->metaProcessor = $metaProcessor;
         $this->googleProcessor = $googleProcessor;
@@ -105,7 +105,7 @@ class ConversionApiManager
         }
 
         // Get conversion data
-        $visitData = $this->visitDataService->getVisits($idSite, $startDate, $endDate);
+        $visits = $this->visitDataService->getVisits($idSite, $startDate, $endDate);
 
         // If no conversions, nothing to do
         if (empty($visitData)) {
@@ -113,62 +113,25 @@ class ConversionApiManager
             return;
         }
 
+        $siteSettings = new MeasurableSettings($idSite);
+
         // Logging function
-        if (isset($visitData[7])) {
-            $firstVisit = $visitData[7];
-            $sanitize = function($data) use (&$sanitize) {
-                if (is_string($data)) {
-                    return mb_convert_encoding($data, 'UTF-8', 'UTF-8');
-                }
-                if (is_array($data)) {
-                    $result = [];
-                    foreach ($data as $key => $value) {
-                        $sanitizedKey = is_string($key) ? mb_convert_encoding($key, 'UTF-8', 'UTF-8') : $key;
-                        $result[$sanitizedKey] = $sanitize($value);
-                    }
-                    return $result;
-                }
-                return $data;
-            };
-            $sanitizedVisit = $sanitize($firstVisit);
-            $jsonContent = json_encode($sanitizedVisit, JSON_PRETTY_PRINT);
-            $debugFile = PIWIK_DOCUMENT_ROOT . '/plugins/ConversionApi/tmp/visit_debug_expanded.json';
-            file_put_contents($debugFile, $jsonContent);
-            $this->logger->info('ConversionApi: DEBUG - Visit structure written to ' . $debugFile);
-        }
+        $this->logVisit($visits[0], '/plugins/ConversionApi/tmp/visit_debug.json');
 
         // Pre-process data with expanding service
-        $expandedData = $this->visitExpandService->expandVisits($visitData, $idSite);
+        $expandedVisits = $this->visitExpandService->expandVisits($visits, $siteSettings);
+        $this->logger->info('ConversionApi: DEBUG - Expanded visits');
+        $this->logVisit($expandedVisits[0], '/plugins/ConversionApi/tmp/visit_debug_expanded.json');
 
-        // Logging function
-        if (isset($expandedData[7])) {
-            $firstVisit = $expandedData[7];
-            $sanitize = function($data) use (&$sanitize) {
-                if (is_string($data)) {
-                    return mb_convert_encoding($data, 'UTF-8', 'UTF-8');
-                }
-                if (is_array($data)) {
-                    $result = [];
-                    foreach ($data as $key => $value) {
-                        $sanitizedKey = is_string($key) ? mb_convert_encoding($key, 'UTF-8', 'UTF-8') : $key;
-                        $result[$sanitizedKey] = $sanitize($value);
-                    }
-                    return $result;
-                }
-                return $data;
-            };
-            $sanitizedVisit = $sanitize($firstVisit);
-            $jsonContent = json_encode($sanitizedVisit, JSON_PRETTY_PRINT);
-            $debugFile = PIWIK_DOCUMENT_ROOT . '/plugins/ConversionApi/tmp/visit_debug_expanded.json';
-            file_put_contents($debugFile, $jsonContent);
-            $this->logger->info('ConversionApi: DEBUG - Visit structure written to ' . $debugFile);
-        }
-
-        // Pre-process data with transforming service
-        $transformedData = $this->visitTransformService->transformVisits($expandedData, $idSite);
+        // Pre-process data with format service
+        $formattedVisits = $this->visitFormatService->formatVisits($expandedVisits, $siteSettings);
+        $this->logger->info('ConversionApi: DEBUG - Formatted visits');
+        $this->logVisit($formattedVisits[0], '/plugins/ConversionApi/tmp/visit_debug_formatted.json');
 
         // Pre-process data with hasing service
-        $hashedData = $this->visitHashService->hashVisits($transformedData, $idSite);
+        $hashedVisits = $this->visitHashService->hashVisits($formattedVisits, $siteSettings);
+        $this->logger->info('ConversionApi: DEBUG - Hashed visits');
+        $this->logVisit($formattedVisits[0], '/plugins/ConversionApi/tmp/visit_debug_hashed.json');
 
         // Process Meta if enabled
 //        try {
@@ -354,5 +317,29 @@ class ConversionApiManager
             throw new MissingConfigurationException('LinkedIn', $missingFields);
         }
         return true;
+    }
+
+    private function logVisit(array $visit, string $outputFileName = null) {
+        if (isset($visit)) {
+            $sanitize = function($data) use (&$sanitize) {
+                if (is_string($data)) {
+                    return mb_convert_encoding($data, 'UTF-8', 'UTF-8');
+                }
+                if (is_array($data)) {
+                    $result = [];
+                    foreach ($data as $key => $value) {
+                        $sanitizedKey = is_string($key) ? mb_convert_encoding($key, 'UTF-8', 'UTF-8') : $key;
+                        $result[$sanitizedKey] = $sanitize($value);
+                    }
+                    return $result;
+                }
+                return $data;
+            };
+            $sanitizedVisit = $sanitize($visit);
+            $jsonContent = json_encode($sanitizedVisit, JSON_PRETTY_PRINT);
+            $debugFile = PIWIK_DOCUMENT_ROOT . $outputFileName;
+            file_put_contents($debugFile, $jsonContent);
+            $this->logger->info('ConversionApi: DEBUG - Visit structure written to ' . $debugFile);
+        }
     }
 }

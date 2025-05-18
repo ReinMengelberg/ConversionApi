@@ -30,20 +30,12 @@ class VisitExpandService
      * Expand dimensions in visits from generic dimension names to their configured names
      *
      * @param array $visits Array of visit data
-     * @param int $idSite Site ID to get dimension mappings for
+     * @param MeasurableSettings $settings The site-specific settings
      * @return array Expanded visits
      */
-    public function expandVisits(array $visits, $idSite)
+    public function expandVisits(array $visits, MeasurableSettings $settings)
     {
-        if (empty($visits)) {
-            $this->logger->info('ConversionApi: No visits found for site {idSite}', ['idSite' => $idSite]);
-            return $visits;
-        }
-
         try {
-            // Get settings
-            $settings = new MeasurableSettings($idSite);
-
             // Get dimension mappings
             $dimensionMappings = $settings->getDimensionMappings();
 

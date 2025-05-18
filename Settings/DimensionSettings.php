@@ -34,8 +34,8 @@ class DimensionSettings
     // Action dimension variables - empty for now, but prepared for future
     private $actionVariables = [];
 
-    // Transformation settings
-    private $transformationSettings = [
+    // Format settings
+    private $formatSettings = [
         'phoneValueCountryCode'
     ];
 
@@ -62,9 +62,9 @@ class DimensionSettings
             $this->settings->actionDimensions[$variable] = $this->createActionDimensionSetting($variable);
         }
 
-        // Initialize Transformation Settings
-        foreach ($this->transformationSettings as $variable) {
-            $this->settings->transformations[$variable] = $this->createTransformationSetting($variable);
+        // Initialize Format Settings
+        foreach ($this->formatSettings as $variable) {
+            $this->settings->formats[$variable] = $this->createFormatSetting($variable);
         }
     }
 
@@ -127,12 +127,12 @@ class DimensionSettings
     }
 
     /**
-     * Create a setting for transformation configuration
+     * Create a setting for format configuration
      *
      * @param string $variable
      * @return Setting
      */
-    private function createTransformationSetting($variable)
+    private function createFormatSetting($variable)
     {
         $title = $this->getVariableTitle($variable);
         $description = $this->getVariableDescription($variable);
@@ -140,7 +140,7 @@ class DimensionSettings
         // For country code, we use integer type for the dialing code
         if ($variable === 'phoneValueCountryCode') {
             return $this->settings->makeSetting(
-                'transform_' . $variable,
+                'format_' . $variable,
                 31, // Default to 31 (Netherlands)
                 FieldConfig::TYPE_INT,
                 function (FieldConfig $field) use ($title, $description) {
@@ -157,14 +157,14 @@ class DimensionSettings
             );
         }
 
-        // Generic case for other transformation settings
+        // Generic case for other format settings
         return $this->settings->makeSetting(
-            'transform_' . $variable,
+            'format_' . $variable,
             '',
             FieldConfig::TYPE_STRING,
             function (FieldConfig $field) use ($title, $description) {
                 $field->title = $title;
-                $field->description = "Transformation setting for $title";
+                $field->description = "Format setting for $title";
                 $field->inlineHelp = $description;
             }
         );
@@ -240,7 +240,7 @@ class DimensionSettings
         $mappings = [
             'visit' => [],
             'action' => [],
-            'transformations' => []
+            'formats' => []
         ];
 
         // Process visit dimensions
@@ -259,11 +259,11 @@ class DimensionSettings
             }
         }
 
-        // Process transformation settings
-        foreach ($this->settings->transformations as $variable => $setting) {
+        // Process format settings
+        foreach ($this->settings->formats as $variable => $setting) {
             $value = $setting->getValue();
             if (!empty($value)) {
-                $mappings['transformations'][$variable] = $value;
+                $mappings['formats'][$variable] = $value;
             }
         }
 
