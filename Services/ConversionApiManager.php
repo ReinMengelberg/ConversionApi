@@ -108,23 +108,16 @@ class ConversionApiManager
             return;
         }
 
-//         Pre-process data with expanding service
-        $expandedData = $this->visitExpandService->expandVisits($visitData, $idSite);
-
         // Logging function
-        if (isset($expandedData[0])) {
-            $firstVisit = $expandedData[0];
-
-            // Sanitize function
+        if (isset($visitData[7])) {
+            $firstVisit = $visitData[7];
             $sanitize = function($data) use (&$sanitize) {
                 if (is_string($data)) {
-                    // Fix malformed UTF-8 characters
                     return mb_convert_encoding($data, 'UTF-8', 'UTF-8');
                 }
                 if (is_array($data)) {
                     $result = [];
                     foreach ($data as $key => $value) {
-                        // Also sanitize keys if they're strings
                         $sanitizedKey = is_string($key) ? mb_convert_encoding($key, 'UTF-8', 'UTF-8') : $key;
                         $result[$sanitizedKey] = $sanitize($value);
                     }
@@ -132,10 +125,36 @@ class ConversionApiManager
                 }
                 return $data;
             };
-
             $sanitizedVisit = $sanitize($firstVisit);
             $jsonContent = json_encode($sanitizedVisit, JSON_PRETTY_PRINT);
-            $debugFile = PIWIK_DOCUMENT_ROOT . '/tmp/visit_debug_simple.json';
+            $debugFile = PIWIK_DOCUMENT_ROOT . '/plugins/ConversionApi/tmp/visit_debug_expanded.json';
+            file_put_contents($debugFile, $jsonContent);
+            $this->logger->info('ConversionApi: DEBUG - Visit structure written to ' . $debugFile);
+        }
+
+        // Pre-process data with expanding service
+        $expandedData = $this->visitExpandService->expandVisits($visitData, $idSite);
+
+        // Logging function
+        if (isset($expandedData[7])) {
+            $firstVisit = $expandedData[7];
+            $sanitize = function($data) use (&$sanitize) {
+                if (is_string($data)) {
+                    return mb_convert_encoding($data, 'UTF-8', 'UTF-8');
+                }
+                if (is_array($data)) {
+                    $result = [];
+                    foreach ($data as $key => $value) {
+                        $sanitizedKey = is_string($key) ? mb_convert_encoding($key, 'UTF-8', 'UTF-8') : $key;
+                        $result[$sanitizedKey] = $sanitize($value);
+                    }
+                    return $result;
+                }
+                return $data;
+            };
+            $sanitizedVisit = $sanitize($firstVisit);
+            $jsonContent = json_encode($sanitizedVisit, JSON_PRETTY_PRINT);
+            $debugFile = PIWIK_DOCUMENT_ROOT . '/plugins/ConversionApi/tmp/visit_debug_expanded.json';
             file_put_contents($debugFile, $jsonContent);
             $this->logger->info('ConversionApi: DEBUG - Visit structure written to ' . $debugFile);
         }

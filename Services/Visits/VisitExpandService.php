@@ -159,25 +159,31 @@ class VisitExpandService
         }
 
         $source = isset($eventIdConfig['source']) ? $eventIdConfig['source'] : null;
-        $customDimension = isset($eventIdConfig['custom_dimension']) ? $eventIdConfig['custom_dimension'] : null;
-
+        $customDimension = isset($eventIdConfig['dimension_index']) ? $eventIdConfig['dimension_index'] : null;
+        $this->logger->info('ConversionApi: Using event ID custom dimension {customDimension} and source {source}',
+            [
+                'customDimension' => $customDimension,
+                'source' => $source
+            ]
+        );
         // If source is 'event_name'
         if ($source === 'event_name') {
-            // Check if eventName key exists (even if null)
             if (array_key_exists('eventName', $action)) {
                 $action['eventId'] = $action['eventName'];
-                $this->logger->debug('ConversionApi: Set eventId from eventName: {eventId}', [
+                $this->logger->info('ConversionApi: Set eventId from eventName: {eventId}', [
                     'eventId' => is_null($action['eventName']) ? 'null' : $action['eventName']
                 ]);
             }
         }
         // If source is 'custom_dimension' and the dimension is configured
-        else if ($source === 'custom_dimension' && !empty($customDimension)) {
+        else if ($source === 'custom_dimension') {
+            if (empty($customDimension)) {
+                $this->logger->warning('ConversionApi: No custom dimension index configured for event ID');
+            }
             $dimensionField = 'dimension' . $customDimension;
-            // Check if dimension field exists (even if null)
             if (array_key_exists($dimensionField, $action)) {
                 $action['eventId'] = $action[$dimensionField];
-                $this->logger->debug('ConversionApi: Set eventId from custom dimension {dimension}: {eventId}', [
+                $this->logger->info('ConversionApi: Set eventId from custom dimension {dimension}: {eventId}', [
                     'dimension' => $dimensionField,
                     'eventId' => is_null($action[$dimensionField]) ? 'null' : $action[$dimensionField]
                 ]);
