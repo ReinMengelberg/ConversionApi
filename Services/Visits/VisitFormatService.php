@@ -58,7 +58,7 @@ class VisitFormatService
 
         try {
             // Get formatting settings
-            $phoneCountryCode = $settings->formats['phoneValueCountryCode']->getValue();
+            $phoneCountryCode = $settings->transformations['phoneValueCountryCode']->getValue();
 
             // Process each visit
             foreach ($visits as $visitId => $visit) {
