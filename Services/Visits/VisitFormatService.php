@@ -52,25 +52,36 @@ class VisitFormatService
 
                 // Format phone number if it exists
                 if (isset($formattedVisit['phoneValue'])) {
-                    $formattedVisit['phoneValue'] = $this->formatPhoneValue($formattedVisit['phoneValue'], $phoneCountryCode);
+                    $formattedVisit = array_merge(
+                        $formattedVisit,
+                        $this->formatPhoneValue($formattedVisit['phoneValue'], $phoneCountryCode)
+                    );
                 }
 
                 // Format name into first and last name components if it exists
                 if (isset($formattedVisit['nameValue'])) {
-                    $nameValues = $this->formatNameValue($formattedVisit['nameValue']);
-                    $formattedVisit['firstNameValue'] = $nameValues['firstNameValue'];
-                    $formattedVisit['lastNameValue'] = $nameValues['lastNameValue'];
+                    $formattedVisit = array_merge(
+                        $formattedVisit,
+                        $this->formatNameValue($formattedVisit['nameValue'])
+                    );
+                }
+
+                // Format email if it exists
+                if (isset($formattedVisit['emailValue'])) {
+                    $formattedVisit = array_merge(
+                        $formattedVisit,
+                        $this->formatEmailValue($formattedVisit['emailValue'])
+                    );
                 }
 
                 // Format address fields
-                $addressFields = ['zipValue', 'regionValue', 'countryValue', 'cityValue'];
+                $addressFields = ['addressValue', 'zipValue', 'regionValue', 'countryValue', 'cityValue'];
                 foreach ($addressFields as $field) {
                     if (isset($formattedVisit[$field])) {
-                        $formattedVisit[$field] = $this->formatAddressValue($formattedVisit[$field]);
+                        $formattedVisit['formatted' . ucfirst($field)] =
+                            $this->formatAddressValue($formattedVisit[$field]);
                     }
                 }
-
-                // Additional formatting can be added here
 
                 // Add the formatted visit to the result array
                 $formattedVisits[$visitId] = $formattedVisit;
@@ -84,58 +95,87 @@ class VisitFormatService
     }
 
     /**
-     * Transform a phone number to a standardized format
-     * - Removes prefixed 0's
-     * - Removes any '+' characters
-     * - Adds country code if not present
+     * Transform a phone number to E164 standard format
+     * - Removes all non-digit characters
+     * - Adds proper country code with + prefix
+     * - Handles international and local formats
      *
      * @param string $phoneValue The phone number to format
-     * @param int $countryCode The default country code to use
-     * @return string The formated phone number
+     * @param int $countryCode The default country code to use (without +)
+     * @return array Array containing original and formatted phone values
      */
     public function formatPhoneValue($phoneValue, $countryCode)
     {
         if (empty($phoneValue)) {
-            return '';
+            return [
+                'phoneValue' => '',
+                'formattedPhoneValue' => ''
+            ];
         }
 
-        // Remove non-numeric characters except leading '+'
+        // Preserve original value
+        $originalPhone = $phoneValue;
+
+        // Remove all non-digit characters except leading '+'
         $cleaned = preg_replace('/[^\d+]/', '', $phoneValue);
 
-        // If the number starts with a plus, remove it but remember it had one
-        $hadPlus = false;
-        if (substr($cleaned, 0, 1) === '+') {
-            $hadPlus = true;
+        // Check if the number already has a + prefix
+        $hasPlus = (substr($cleaned, 0, 1) === '+');
+
+        // Remove the + if it exists
+        if ($hasPlus) {
             $cleaned = substr($cleaned, 1);
         }
 
         // Remove leading zeros
         $cleaned = ltrim($cleaned, '0');
 
-        // Check if the number already has a country code
-        // This is a simplistic check - in a real implementation you might want to
-        // use a library like libphonenumber to properly validate and format
-        if (!$hadPlus && strlen($cleaned) <= 10) {
-            // Assuming this is a number without country code, prepend the default
+        // Determine if country code is already included
+        // This is a simplified check - a real implementation might use libphonenumber
+        $hasCountryCode = $hasPlus ||
+            (strlen($cleaned) > 10) ||
+            (substr($cleaned, 0, strlen($countryCode)) === $countryCode);
+
+        // Add country code if not present
+        if (!$hasCountryCode && !empty($countryCode)) {
             $cleaned = $countryCode . $cleaned;
         }
 
-        return $cleaned;
+        // Format to E164 (always add + prefix)
+        $formattedPhone = '+' . $cleaned;
+
+        return [
+            'phoneValue' => $originalPhone,
+            'formattedPhoneValue' => $formattedPhone
+        ];
     }
 
     /**
-     * Transform a full name into first name and last name components
+     * Transform a full name into first name and last name components with formatted versions
+     * Preserves original values and adds formatted versions that:
+     * - Remove leading/trailing whitespaces
+     * - Convert to lowercase
+     * - Use only Roman alphabet a-z characters
+     * - Ensure UTF-8 encoding
      *
      * @param string $nameValue The full name to format
-     * @return array Array containing 'firstNameValue' and 'lastNameValue'
+     * @return array Array containing original and formatted name components
      */
     public function formatNameValue($nameValue)
     {
+        // Handle empty input
         if (empty($nameValue)) {
             return [
                 'firstNameValue' => '',
-                'lastNameValue' => ''
+                'lastNameValue' => '',
+                'formattedFirstNameValue' => '',
+                'formattedLastNameValue' => ''
             ];
+        }
+
+        // Ensure we're working with UTF-8
+        if (!mb_check_encoding($nameValue, 'UTF-8')) {
+            $nameValue = mb_convert_encoding($nameValue, 'UTF-8');
         }
 
         // Trim and normalize whitespace
@@ -144,11 +184,19 @@ class VisitFormatService
         // Split the name into parts
         $nameParts = explode(' ', $nameValue);
 
-        // If there's only one part, it's the first name
+        // Handle single-part names
         if (count($nameParts) == 1) {
+            $firstName = $nameParts[0];
+            $lastName = '';
+
+            // Create formatted versions
+            $formattedFirst = $this->formatTextValue($firstName);
+
             return [
-                'firstNameValue' => $nameParts[0],
-                'lastNameValue' => ''
+                'firstNameValue' => $firstName,
+                'lastNameValue' => $lastName,
+                'formattedFirstNameValue' => $formattedFirst,
+                'formattedLastNameValue' => ''
             ];
         }
 
@@ -158,9 +206,44 @@ class VisitFormatService
         // Last name is everything else joined together
         $lastName = implode(' ', $nameParts);
 
+        // Create formatted versions
+        $formattedFirst = $this->formatTextValue($firstName);
+        $formattedLast = $this->formatTextValue($lastName);
+
         return [
             'firstNameValue' => $firstName,
-            'lastNameValue' => $lastName
+            'lastNameValue' => $lastName,
+            'formattedFirstNameValue' => $formattedFirst,
+            'formattedLastNameValue' => $formattedLast
+        ];
+    }
+
+    /**
+     * Format an email address while preserving the original
+     * - Removes leading/trailing whitespace
+     * - Converts to lowercase
+     *
+     * @param string $emailValue The email to format
+     * @return array Array containing original and formatted email values
+     */
+    public function formatEmailValue($emailValue)
+    {
+        if (empty($emailValue)) {
+            return [
+                'emailValue' => '',
+                'formattedEmailValue' => ''
+            ];
+        }
+
+        // Preserve original value
+        $originalEmail = $emailValue;
+
+        // Basic email formatting
+        $formattedEmail = strtolower(trim($emailValue));
+
+        return [
+            'emailValue' => $originalEmail,
+            'formattedEmailValue' => $formattedEmail
         ];
     }
 
@@ -172,7 +255,7 @@ class VisitFormatService
      * - Ensures UTF-8 encoding
      *
      * @param string $addressValue The address value to format
-     * @return string The formated address value
+     * @return string The formatted address value
      */
     public function formatAddressValue($addressValue)
     {
@@ -180,20 +263,44 @@ class VisitFormatService
             return '';
         }
 
-        // Ensure we're working with UTF-8
-        if (!mb_check_encoding($addressValue, 'UTF-8')) {
-            $addressValue = mb_convert_encoding($addressValue, 'UTF-8');
+        return $this->formatTextValue($addressValue, false);
+    }
+
+    /**
+     * General purpose text formatter that:
+     * - Ensures UTF-8 encoding
+     * - Converts to lowercase
+     * - Transliterates non-Latin characters to Roman alphabet
+     * - Removes non-alphanumeric characters
+     * - Optionally capitalizes first letter
+     *
+     * @param string $value The text to format
+     * @param bool $capitalize Whether to capitalize the first letter (default: true)
+     * @return string The formatted text
+     */
+    private function formatTextValue($value, $capitalize = true)
+    {
+        if (empty($value)) {
+            return '';
         }
 
+        // Ensure we're working with UTF-8
+        if (!mb_check_encoding($value, 'UTF-8')) {
+            $value = mb_convert_encoding($value, 'UTF-8');
+        }
+
+        // Trim whitespace
+        $value = trim($value);
+
         // Convert to lowercase
-        $value = mb_strtolower($addressValue, 'UTF-8');
+        $value = mb_strtolower($value, 'UTF-8');
 
         // Transliterate non-Latin characters to their romanized equivalents
         if (function_exists('transliterator_transliterate')) {
-            // Use intl extension if available (better handling of various scripts)
+            // Use intl extension if available
             $value = transliterator_transliterate('Any-Latin; Latin-ASCII', $value);
         } else {
-            // Fallback for common accented characters if intl extension is not available
+            // Fallback for common accented characters
             $search = ['á', 'à', 'â', 'ä', 'ã', 'å', 'ç', 'é', 'è', 'ê', 'ë', 'í', 'ì', 'î', 'ï',
                 'ñ', 'ó', 'ò', 'ô', 'ö', 'õ', 'ú', 'ù', 'û', 'ü', 'ý', 'ÿ', 'ß'];
             $replace = ['a', 'a', 'a', 'a', 'a', 'a', 'c', 'e', 'e', 'e', 'e', 'i', 'i', 'i', 'i',
@@ -201,9 +308,10 @@ class VisitFormatService
             $value = str_replace($search, $replace, $value);
         }
 
-        // Remove anything that's not a-z or 0-9
+        // Remove non-alphanumeric characters (leaving only a-z and 0-9)
         $value = preg_replace('/[^a-z0-9]/', '', $value);
 
-        return $value;
+        // Capitalize first letter if requested
+        return $capitalize ? ucfirst($value) : $value;
     }
 }

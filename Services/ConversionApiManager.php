@@ -108,7 +108,7 @@ class ConversionApiManager
         $visits = $this->visitDataService->getVisits($idSite, $startDate, $endDate);
 
         // If no conversions, nothing to do
-        if (empty($visitData)) {
+        if (empty($visits)) {
             $this->logger->info('ConversionApi: No visit data found for site {idSite} in the specified period', ['idSite' => $idSite]);
             return;
         }
@@ -131,7 +131,7 @@ class ConversionApiManager
         // Pre-process data with hasing service
         $hashedVisits = $this->visitHashService->hashVisits($formattedVisits, $siteSettings);
         $this->logger->info('ConversionApi: DEBUG - Hashed visits');
-        $this->logVisit($formattedVisits[0], '/plugins/ConversionApi/tmp/visit_debug_hashed.json');
+        $this->logVisit($hashedVisits[0], '/plugins/ConversionApi/tmp/visit_debug_hashed.json');
 
         // Process Meta if enabled
 //        try {
@@ -151,38 +151,38 @@ class ConversionApiManager
 //        }
 
         // Process Google if enabled
-        try {
-            if ($settings->googleSyncVisits->getValue() && $this->isGoogleEnabled($settings)) {
-                $this->processGoogleVisits($idSite, $hashedData, $settings);
-            }
-        } catch (MissingConfigurationException $e) {
-            $this->logger->warning('ConversionApi: {message} for site {idSite}. Skipping Google integration.', [
-                'message' => $e->getMessage(),
-                'idSite' => $idSite
-            ]);
-        } catch (\Exception $e) {
-            $this->logger->error('ConversionApi: Error processing Google integration for site {idSite}: {message}. Continuing with other integrations.', [
-                'idSite' => $idSite,
-                'message' => $e->getMessage()
-            ]);
-        }
+//        try {
+//            if ($settings->googleSyncVisits->getValue() && $this->isGoogleEnabled($settings)) {
+//                $this->processGoogleVisits($idSite, $hashedData, $settings);
+//            }
+//        } catch (MissingConfigurationException $e) {
+//            $this->logger->warning('ConversionApi: {message} for site {idSite}. Skipping Google integration.', [
+//                'message' => $e->getMessage(),
+//                'idSite' => $idSite
+//            ]);
+//        } catch (\Exception $e) {
+//            $this->logger->error('ConversionApi: Error processing Google integration for site {idSite}: {message}. Continuing with other integrations.', [
+//                'idSite' => $idSite,
+//                'message' => $e->getMessage()
+//            ]);
+//        }
 
         // Process LinkedIn if enabled
-        try {
-            if ($settings->linkedinSyncVisits->getValue() && $this->isLinkedinEnabled($settings)) {
-                $this->processLinkedinVisits($idSite, $hashedData, $settings);
-            }
-        } catch (MissingConfigurationException $e) {
-            $this->logger->warning('ConversionApi: {message} for site {idSite}. Skipping LinkedIn integration.', [
-                'message' => $e->getMessage(),
-                'idSite' => $idSite
-            ]);
-        } catch (\Exception $e) {
-            $this->logger->error('ConversionApi: Error processing LinkedIn integration for site {idSite}: {message}. Continuing with other integrations.', [
-                'idSite' => $idSite,
-                'message' => $e->getMessage()
-            ]);
-        }
+//        try {
+//            if ($settings->linkedinSyncVisits->getValue() && $this->isLinkedinEnabled($settings)) {
+//                $this->processLinkedinVisits($idSite, $hashedData, $settings);
+//            }
+//        } catch (MissingConfigurationException $e) {
+//            $this->logger->warning('ConversionApi: {message} for site {idSite}. Skipping LinkedIn integration.', [
+//                'message' => $e->getMessage(),
+//                'idSite' => $idSite
+//            ]);
+//        } catch (\Exception $e) {
+//            $this->logger->error('ConversionApi: Error processing LinkedIn integration for site {idSite}: {message}. Continuing with other integrations.', [
+//                'idSite' => $idSite,
+//                'message' => $e->getMessage()
+//            ]);
+//        }
     }
 
     /**
