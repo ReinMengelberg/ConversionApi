@@ -23,6 +23,19 @@ class VisitHashService
     /** @var string The hashing algorithm to use */
     private $hashAlgorithm;
 
+    // Define all possible hashed variables that should always be present
+    private $allHashedVariables = [
+        'hashedEmailValue',
+        'hashedPhoneValue',
+        'hashedFirstNameValue',
+        'hashedLastNameValue',
+        'hashedAddressValue',
+        'hashedZipValue',
+        'hashedRegionValue',
+        'hashedCountryCodeValue',
+        'hashedCityValue'
+    ];
+
     /**
      * Constructor for VisitHashService class
      *
@@ -52,38 +65,40 @@ class VisitHashService
                 // Create a copy of the visit to add hashed values
                 $hashedVisit = $visit;
 
+                // Initialize all hashed variables with null values
+                $this->initializeAllHashedVariables($hashedVisit);
+
                 // Hash email if formatted version exists
-                if (isset($hashedVisit['formattedEmailValue'])) {
+                if (isset($hashedVisit['formattedEmailValue']) && $hashedVisit['formattedEmailValue'] !== null) {
                     $hashedVisit['hashedEmailValue'] = $this->hashValue($hashedVisit['formattedEmailValue']);
                 }
 
                 // Hash phone if formatted version exists
-                if (isset($hashedVisit['formattedPhoneValue'])) {
+                if (isset($hashedVisit['formattedPhoneValue']) && $hashedVisit['formattedPhoneValue'] !== null) {
                     $hashedVisit['hashedPhoneValue'] = $this->hashValue($hashedVisit['formattedPhoneValue']);
                 }
 
                 // Hash name components if formatted versions exist
-                if (isset($hashedVisit['formattedFirstNameValue'])) {
+                if (isset($hashedVisit['formattedFirstNameValue']) && $hashedVisit['formattedFirstNameValue'] !== null) {
                     $hashedVisit['hashedFirstNameValue'] = $this->hashValue($hashedVisit['formattedFirstNameValue']);
                 }
 
-                if (isset($hashedVisit['formattedLastNameValue'])) {
+                if (isset($hashedVisit['formattedLastNameValue']) && $hashedVisit['formattedLastNameValue'] !== null) {
                     $hashedVisit['hashedLastNameValue'] = $this->hashValue($hashedVisit['formattedLastNameValue']);
                 }
 
                 // Hash address fields if they exist
                 $addressFields = [
-                    'formattedAddressValue',
-                    'formattedZipValue',
-                    'formattedRegionValue',
-                    'formattedCountryValue',
-                    'formattedCityValue'
+                    'formattedAddressValue' => 'hashedAddressValue',
+                    'formattedZipValue' => 'hashedZipValue',
+                    'formattedRegionValue' => 'hashedRegionValue',
+                    'formattedCountryCodeValue' => 'hashedCountryCodeValue',
+                    'formattedCityValue' => 'hashedCityValue'
                 ];
 
-                foreach ($addressFields as $field) {
-                    if (isset($hashedVisit[$field])) {
-                        $newFieldName = str_replace('formatted', 'hashed', $field);
-                        $hashedVisit[$newFieldName] = $this->hashValue($hashedVisit[$field]);
+                foreach ($addressFields as $formattedField => $hashedField) {
+                    if (isset($hashedVisit[$formattedField]) && $hashedVisit[$formattedField] !== null) {
+                        $hashedVisit[$hashedField] = $this->hashValue($hashedVisit[$formattedField]);
                     }
                 }
 
@@ -100,16 +115,30 @@ class VisitHashService
     }
 
     /**
+     * Initialize all hashed variables with null values
+     *
+     * @param array $data Data array by reference
+     */
+    private function initializeAllHashedVariables(array &$data)
+    {
+        foreach ($this->allHashedVariables as $variable) {
+            if (!array_key_exists($variable, $data)) {
+                $data[$variable] = null;
+            }
+        }
+    }
+
+    /**
      * Hash a single value using the configured algorithm
      *
-     * @param string $value The value to hash
+     * @param string|null $value The value to hash
      * @param string|null $salt Optional salt to add to the hash
-     * @return string The hashed value
+     * @return string|null The hashed value or null if input is empty
      */
     public function hashValue($value, $salt = null)
     {
         if (empty($value)) {
-            return '';
+            return null;
         }
 
         $valueToHash = $salt ? $salt . $value : $value;

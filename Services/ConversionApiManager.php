@@ -116,22 +116,24 @@ class ConversionApiManager
         $siteSettings = new MeasurableSettings($idSite);
 
         // Logging function
-        $this->logVisit($visits[0], '/plugins/ConversionApi/tmp/visit_debug.json');
+        $loggedVisitIndex = 2;
+
+        $this->logVisit($visits[$loggedVisitIndex], '/plugins/ConversionApi/tmp/visit_debug.json');
 
         // Pre-process data with expanding service
         $expandedVisits = $this->visitExpandService->expandVisits($visits, $siteSettings);
         $this->logger->info('ConversionApi: DEBUG - Expanded visits');
-        $this->logVisit($expandedVisits[0], '/plugins/ConversionApi/tmp/visit_debug_expanded.json');
+        $this->logVisit($expandedVisits[$loggedVisitIndex], '/plugins/ConversionApi/tmp/visit_debug_expanded.json');
 
         // Pre-process data with format service
         $formattedVisits = $this->visitFormatService->formatVisits($expandedVisits, $siteSettings);
         $this->logger->info('ConversionApi: DEBUG - Formatted visits');
-        $this->logVisit($formattedVisits[0], '/plugins/ConversionApi/tmp/visit_debug_formatted.json');
+        $this->logVisit($formattedVisits[$loggedVisitIndex], '/plugins/ConversionApi/tmp/visit_debug_formatted.json');
 
         // Pre-process data with hasing service
         $hashedVisits = $this->visitHashService->hashVisits($formattedVisits, $siteSettings);
         $this->logger->info('ConversionApi: DEBUG - Hashed visits');
-        $this->logVisit($hashedVisits[0], '/plugins/ConversionApi/tmp/visit_debug_hashed.json');
+        $this->logVisit($hashedVisits[$loggedVisitIndex], '/plugins/ConversionApi/tmp/visit_debug_hashed.json');
 
         // Process Meta if enabled
 //        try {

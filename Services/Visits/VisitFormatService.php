@@ -20,6 +20,21 @@ class VisitFormatService
     /** @var LoggerInterface */
     private $logger;
 
+    // Define all possible formatted variables that should always be present
+    private $allFormattedVariables = [
+        'firstNameValue',
+        'lastNameValue',
+        'formattedFirstNameValue',
+        'formattedLastNameValue',
+        'formattedEmailValue',
+        'formattedPhoneValue',
+        'formattedAddressValue',
+        'formattedZipValue',
+        'formattedRegionValue',
+        'formattedCountryCodeValue',
+        'formattedCityValue'
+    ];
+
     /**
      * Constructor for VisitFormatService class
      *
@@ -50,37 +65,34 @@ class VisitFormatService
                 // Create a copy of the visit to format
                 $formattedVisit = $visit;
 
-                // Format phone number if it exists
-                if (isset($formattedVisit['phoneValue'])) {
-                    $formattedVisit = array_merge(
-                        $formattedVisit,
-                        $this->formatPhoneValue($formattedVisit['phoneValue'], $phoneCountryCode)
-                    );
-                }
+                // Initialize all formatted variables with null values
+                $this->initializeAllFormattedVariables($formattedVisit);
 
-                // Format name into first and last name components if it exists
-                if (isset($formattedVisit['nameValue'])) {
-                    $formattedVisit = array_merge(
-                        $formattedVisit,
-                        $this->formatNameValue($formattedVisit['nameValue'])
-                    );
-                }
+                // Format phone number
+                $phoneResult = $this->formatPhoneValue(
+                    isset($formattedVisit['phoneValue']) ? $formattedVisit['phoneValue'] : null,
+                    $phoneCountryCode
+                );
+                $formattedVisit = array_merge($formattedVisit, $phoneResult);
 
-                // Format email if it exists
-                if (isset($formattedVisit['emailValue'])) {
-                    $formattedVisit = array_merge(
-                        $formattedVisit,
-                        $this->formatEmailValue($formattedVisit['emailValue'])
-                    );
-                }
+                // Format name components
+                $nameResult = $this->formatNameValue(
+                    isset($formattedVisit['nameValue']) ? $formattedVisit['nameValue'] : null
+                );
+                $formattedVisit = array_merge($formattedVisit, $nameResult);
+
+                // Format email
+                $emailResult = $this->formatEmailValue(
+                    isset($formattedVisit['emailValue']) ? $formattedVisit['emailValue'] : null
+                );
+                $formattedVisit = array_merge($formattedVisit, $emailResult);
 
                 // Format address fields
-                $addressFields = ['addressValue', 'zipValue', 'regionValue', 'countryValue', 'cityValue'];
+                $addressFields = ['addressValue', 'zipValue', 'regionValue', 'countryCodeValue', 'cityValue'];
                 foreach ($addressFields as $field) {
-                    if (isset($formattedVisit[$field])) {
-                        $formattedVisit['formatted' . ucfirst($field)] =
-                            $this->formatAddressValue($formattedVisit[$field]);
-                    }
+                    $formattedVisit['formatted' . ucfirst($field)] = $this->formatAddressValue(
+                        isset($formattedVisit[$field]) ? $formattedVisit[$field] : null
+                    );
                 }
 
                 // Add the formatted visit to the result array
@@ -95,12 +107,26 @@ class VisitFormatService
     }
 
     /**
+     * Initialize all formatted variables with null values
+     *
+     * @param array $data Data array by reference
+     */
+    private function initializeAllFormattedVariables(array &$data)
+    {
+        foreach ($this->allFormattedVariables as $variable) {
+            if (!array_key_exists($variable, $data)) {
+                $data[$variable] = null;
+            }
+        }
+    }
+
+    /**
      * Transform a phone number to E164 standard format
      * - Removes all non-digit characters
      * - Adds proper country code with + prefix
      * - Handles international and local formats
      *
-     * @param string $phoneValue The phone number to format
+     * @param string|null $phoneValue The phone number to format
      * @param int $countryCode The default country code to use (without +)
      * @return array Array containing original and formatted phone values
      */
@@ -108,8 +134,8 @@ class VisitFormatService
     {
         if (empty($phoneValue)) {
             return [
-                'phoneValue' => '',
-                'formattedPhoneValue' => ''
+                'phoneValue' => $phoneValue,
+                'formattedPhoneValue' => null
             ];
         }
 
@@ -158,7 +184,7 @@ class VisitFormatService
      * - Use only Roman alphabet a-z characters
      * - Ensure UTF-8 encoding
      *
-     * @param string $nameValue The full name to format
+     * @param string|null $nameValue The full name to format
      * @return array Array containing original and formatted name components
      */
     public function formatNameValue($nameValue)
@@ -166,10 +192,10 @@ class VisitFormatService
         // Handle empty input
         if (empty($nameValue)) {
             return [
-                'firstNameValue' => '',
-                'lastNameValue' => '',
-                'formattedFirstNameValue' => '',
-                'formattedLastNameValue' => ''
+                'firstNameValue' => null,
+                'lastNameValue' => null,
+                'formattedFirstNameValue' => null,
+                'formattedLastNameValue' => null
             ];
         }
 
@@ -187,7 +213,7 @@ class VisitFormatService
         // Handle single-part names
         if (count($nameParts) == 1) {
             $firstName = $nameParts[0];
-            $lastName = '';
+            $lastName = null;
 
             // Create formatted versions
             $formattedFirst = $this->formatTextValue($firstName);
@@ -196,7 +222,7 @@ class VisitFormatService
                 'firstNameValue' => $firstName,
                 'lastNameValue' => $lastName,
                 'formattedFirstNameValue' => $formattedFirst,
-                'formattedLastNameValue' => ''
+                'formattedLastNameValue' => null
             ];
         }
 
@@ -223,15 +249,15 @@ class VisitFormatService
      * - Removes leading/trailing whitespace
      * - Converts to lowercase
      *
-     * @param string $emailValue The email to format
+     * @param string|null $emailValue The email to format
      * @return array Array containing original and formatted email values
      */
     public function formatEmailValue($emailValue)
     {
         if (empty($emailValue)) {
             return [
-                'emailValue' => '',
-                'formattedEmailValue' => ''
+                'emailValue' => $emailValue,
+                'formattedEmailValue' => null
             ];
         }
 
@@ -254,13 +280,13 @@ class VisitFormatService
      * - Transliterates non-Latin characters to Latin equivalents
      * - Ensures UTF-8 encoding
      *
-     * @param string $addressValue The address value to format
-     * @return string The formatted address value
+     * @param string|null $addressValue The address value to format
+     * @return string|null The formatted address value
      */
     public function formatAddressValue($addressValue)
     {
         if (empty($addressValue)) {
-            return '';
+            return null;
         }
 
         return $this->formatTextValue($addressValue, false);
@@ -274,14 +300,14 @@ class VisitFormatService
      * - Removes non-alphanumeric characters
      * - Optionally capitalizes first letter
      *
-     * @param string $value The text to format
+     * @param string|null $value The text to format
      * @param bool $capitalize Whether to capitalize the first letter (default: true)
-     * @return string The formatted text
+     * @return string|null The formatted text
      */
     private function formatTextValue($value, $capitalize = true)
     {
         if (empty($value)) {
-            return '';
+            return null;
         }
 
         // Ensure we're working with UTF-8

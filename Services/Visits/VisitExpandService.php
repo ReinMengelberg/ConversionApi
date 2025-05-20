@@ -16,6 +16,30 @@ class VisitExpandService
     /** @var LoggerInterface */
     private $logger;
 
+    // Define all possible variables that need to be initialized
+    private $allVisitVariables = [
+        'userAgent',
+        'emailValue',
+        'nameValue',
+        'phoneValue',
+        'birthDateValue',
+        'genderValue',
+        'addressValue',
+        'zipValue',
+        'cityValue', // default to visit.city
+        'regionValue', // default to the visit.region
+        'countryCodeValue', // default to the visit.countryCode
+        'klaroCookie', // Special case for consent
+        '_fbc',
+        '_fbp',
+        'gclid',
+        'li_fat_id',
+    ];
+
+    private $allActionVariables = [
+        'id' // Always needed
+    ];
+
     /**
      * Constructor for VisitExpandService class
      *
@@ -45,24 +69,43 @@ class VisitExpandService
             // Get consent configuration
             $consentConfig = $settings->getConsentConfiguration();
 
-            // If no mappings or configs, return original data
-            if (empty($dimensionMappings['visit']) && empty($dimensionMappings['action'])
-                && empty($eventIdConfig) && empty($consentConfig)) {
-                return $visits;
-            }
+            // If no mappings or configs, just initialize all variables but don't expand
+            $needsProcessing = (!empty($dimensionMappings['visit']) || !empty($dimensionMappings['action'])
+                || !empty($eventIdConfig) || !empty($consentConfig));
 
-            $visitMappings = array_flip($dimensionMappings['visit']);
-            $actionMappings = array_flip($dimensionMappings['action']);
+            // Flip mappings to get dimension index to name mappings
+            $visitMappings = !empty($dimensionMappings['visit']) ? array_flip($dimensionMappings['visit']) : [];
+            $actionMappings = !empty($dimensionMappings['action']) ? array_flip($dimensionMappings['action']) : [];
 
             // Process each visit
             foreach ($visits as &$visit) {
-                $this->expandVisitDimensions($visit, $visitMappings);
-                $this->expandConsentData($visit, $consentConfig);
+                // Initialize all possible visit variables with null values
+                $this->initializeAllVariables($visit, $this->allVisitVariables);
+
+                // Only process mappings if we have configurations
+                if ($needsProcessing) {
+                    // Expand visit dimensions from custom dimensions
+                    $this->expandVisitDimensions($visit, $visitMappings);
+
+                    // Handle consent data
+                    $this->expandConsentData($visit, $consentConfig);
+                }
+
+                $this->setDefaultLocationValues($visit);
+
+                // Process actions
                 if (!empty($visit['actionDetails']) && is_array($visit['actionDetails'])) {
                     foreach ($visit['actionDetails'] as &$action) {
-                        $this->expandActionDimensions($action, $actionMappings);
-                        if ($action['type'] === 'event') {
-                            $this->expandEventId($action, $eventIdConfig);
+                        // Initialize all possible action variables with null values
+                        $this->initializeAllVariables($action, $this->allActionVariables);
+
+                        // Only process mappings if we have configurations
+                        if ($needsProcessing) {
+                            // Expand action dimensions
+                            $this->expandActionDimensions($action, $actionMappings);
+
+                            // Process event IDs for ALL action types, not just events
+                            $this->expandActionId($action, $eventIdConfig);
                         }
                     }
                 }
@@ -72,6 +115,21 @@ class VisitExpandService
         } catch (\Exception $e) {
             $this->logger->error('ConversionApi: Error expanding visit dimensions: {message}', ['message' => $e->getMessage()]);
             return $visits; // Return original visits on error
+        }
+    }
+
+    /**
+     * Initialize all variables with null values
+     *
+     * @param array $data Data array by reference
+     * @param array $variables List of variables to initialize
+     */
+    private function initializeAllVariables(array &$data, array $variables)
+    {
+        foreach ($variables as $variable) {
+            if (!array_key_exists($variable, $data)) {
+                $data[$variable] = null;
+            }
         }
     }
 
@@ -89,6 +147,7 @@ class VisitExpandService
                 $visit[$dimensionName] = $visit[$fieldName];
             }
         }
+
     }
 
     /**
@@ -113,26 +172,41 @@ class VisitExpandService
      * @param array $action Action data by reference
      * @param array $eventIdConfig Event ID configuration
      */
-    private function expandEventId(array &$action, array $eventIdConfig)
+    private function expandActionId(array &$action, array $eventIdConfig)
     {
-        if (empty($eventIdConfig)) {
-            return;
+        // eventId is already initialized in initializeAllVariables
+
+        // For "action" type, use idpageview as the eventId
+        if (isset($action['type']) && $action['type'] === 'action') {
+            if (array_key_exists('idpageview', $action)) {
+                $action['id'] = $action['idpageview'];
+            }
+            return; // Exit early since we've set the eventId for actions
         }
 
-        $source = isset($eventIdConfig['source']) ? $eventIdConfig['source'] : null;
-        $customDimension = isset($eventIdConfig['dimension_index']) ? $eventIdConfig['dimension_index'] : null;
-        if ($source === 'event_name') {
-            if (array_key_exists('eventName', $action)) {
-                $action['eventId'] = $action['eventName'];
+        // Only process other event ID logic for event type
+        if (isset($action['type']) && $action['type'] === 'event') {
+            if (empty($eventIdConfig)) {
+                return;
             }
-        }
-        else if ($source === 'custom_dimension') {
-            if (empty($customDimension)) {
-                $this->logger->warning('ConversionApi: No custom dimension index configured for event ID');
+
+            $source = isset($eventIdConfig['source']) ? $eventIdConfig['source'] : null;
+            $customDimension = isset($eventIdConfig['dimension_index']) ? $eventIdConfig['dimension_index'] : null;
+
+            if ($source === 'event_name') {
+                if (array_key_exists('eventName', $action)) {
+                    $action['id'] = $action['eventName'];
+                }
             }
-            $dimensionField = 'dimension' . $customDimension;
-            if (array_key_exists($dimensionField, $action)) {
-                $action['eventId'] = $action[$dimensionField];
+            else if ($source === 'custom_dimension') {
+                if (empty($customDimension)) {
+                    $this->logger->warning('ConversionApi: No custom dimension index configured for event ID');
+                } else {
+                    $dimensionField = 'dimension' . $customDimension;
+                    if (array_key_exists($dimensionField, $action)) {
+                        $action['id'] = $action[$dimensionField];
+                    }
+                }
             }
         }
     }
@@ -145,14 +219,40 @@ class VisitExpandService
      */
     private function expandConsentData(array &$visit, array $consentConfig)
     {
+        // klaroCookie is already initialized in initializeAllVariables
+
         if (empty($consentConfig) || empty($consentConfig['dimension_index'])) {
             return;
         }
+
         $dimensionIndex = $consentConfig['dimension_index'];
         $dimensionField = 'dimension' . $dimensionIndex;
 
         if (array_key_exists($dimensionField, $visit)) {
             $visit['klaroCookie'] = $visit[$dimensionField];
+        }
+    }
+
+    /**
+     * Set default location values from visit data if custom values are null
+     *
+     * @param array $visit Visit data by reference
+     */
+    private function setDefaultLocationValues(array &$visit)
+    {
+        // Set cityValue to visit.city if not already set
+        if ($visit['cityValue'] === null && isset($visit['city'])) {
+            $visit['cityValue'] = $visit['city'];
+        }
+
+        // Set regionValue to visit.region if not already set
+        if ($visit['regionValue'] === null && isset($visit['region'])) {
+            $visit['regionValue'] = $visit['region'];
+        }
+
+        // Set countryCodeValue to visit.countryCode if not already set
+        if ($visit['countryCodeValue'] === null && isset($visit['countryCode'])) {
+            $visit['countryCodeValue'] = $visit['countryCode'];
         }
     }
 }

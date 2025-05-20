@@ -22,13 +22,14 @@ class DimensionSettings
         'birthDateValue',
         'genderValue',
         'addressValue',
-        'cityValue',
-        'regionValue',
         'zipValue',
-        'countryValue',
+        'cityValue', // Defaults to GeoIP2 'city' value
+        'regionValue', // Defaults to GeoIP2 'region' value
+        'countryCodeValue', // Defaults to GeoIP2 'country' value
         '_fbc',
         '_fbp',
         'gclid',
+        'li_fat_id'
     ];
 
     // Action dimension variables - empty for now, but prepared for future
@@ -137,7 +138,7 @@ class DimensionSettings
         $title = $this->getVariableTitle($variable);
         $description = $this->getVariableDescription($variable);
 
-        // For country code, we use integer type for the dialing code
+        // For phone country code, we use integer type for the dialing code
         if ($variable === 'phoneValueCountryCode') {
             return $this->settings->makeSetting(
                 'format_' . $variable,
@@ -186,13 +187,15 @@ class DimensionSettings
             'birthDateValue' => 'Birth Date Value',
             'genderValue' => 'Gender Value',
             'addressValue' => 'Address Value',
-            'regionValue' => 'Region Value',
             'zipValue' => 'Zip/Postal Code Value',
-            'countryValue' => 'Country Value',
+            'cityValue' => 'City Value',
+            'regionValue' => 'Region Value',
+            'countryCodeValue' => 'Country Code Value',
             'klaroCookie' => 'Klaro Cookie',
             '_fbc' => 'Facebook Click ID (_fbc)',
             '_fbp' => 'Facebook Browser ID (_fbp)',
             'gclid' => 'Google Click ID (gclid)',
+            'li_fat_id' => 'LinkedIn First-Party Ad Tracking ID (li_fat_id)',
             'phoneValueCountryCode' => 'Phone Country Code',
             // Add more as needed
         ];
@@ -216,13 +219,18 @@ class DimensionSettings
             'birthDateValue' => 'User\'s birth date captured from forms or user input',
             'genderValue' => 'User\'s gender captured from forms or user input',
             'addressValue' => 'User\'s address captured from forms or user input',
-            'regionValue' => 'User\'s region or state captured from forms or user input',
             'zipValue' => 'User\'s zip or postal code captured from forms or user input',
-            'countryValue' => 'User\'s country captured from forms or user input',
-            'klaroCookie' => 'Klaro consent management cookie value',
+            'cityValue' => 'User\'s city captured from forms or user input, defaults to GeoIP2 city value if not set',
+            'regionValue' => 'User\'s region or state captured from forms or user input, defaults to GeoIP2 region value if not set',
+            'countryCodeValue' => 'User\'s country code in ISO 3166-1 alpha-2 format, captured from forms or user input, defaults to GeoIP2 countryCode value if not set',
+
+            // Marketing
             '_fbc' => 'Facebook click identifier for ad attribution',
             '_fbp' => 'Facebook browser identifier for cross-site tracking',
             'gclid' => 'Google Click ID for AdWords campaign tracking',
+            'li_fat_id' => 'LinkedIn First-Party Ad Tracking ID for AdWords campaign tracking',
+
+            // Formatting
             'phoneValueCountryCode' => 'Default country code for processing phone numbers (e.g., "31" for the Netherlands)',
             // Add more as needed
         ];
