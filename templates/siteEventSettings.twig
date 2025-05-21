@@ -76,7 +76,7 @@
                     </div>
 
                     <div id="custom_dimension_container" class="form-group dependent-field {% if settings.eventIdSource.getValue() == 'custom_dimension' %}active{% endif %}" {% if settings.eventIdSource.getValue() != 'custom_dimension' %}style="display: none;"{% endif %}>
-                        <label for="event_id_custom_dimension">Custom Dimension Index</label>
+                        <label for="event_id_custom_dimension">Custom Dimension ID</label>
                         <div class="form-input-container">
                             <input type="number"
                                    id="event_id_custom_dimension"
@@ -84,7 +84,7 @@
                                    class="form-control"
                                    min="1"
                                    value="{{ settings.eventIdCustomDimension.getValue() }}" />
-                            <div class="form-text text-muted">Enter the index of the action-scoped custom dimension that contains the Event ID</div>
+                            <div class="form-text text-muted">Enter the ID of the action-scoped custom dimension that contains the Event ID</div>
                         </div>
                     </div>
 
