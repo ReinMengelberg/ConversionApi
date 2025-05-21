@@ -73,7 +73,7 @@ class VisitExpandService
             $needsProcessing = (!empty($dimensionMappings['visit']) || !empty($dimensionMappings['action'])
                 || !empty($eventIdConfig) || !empty($consentConfig));
 
-            // Flip mappings to get dimension index to name mappings
+            // Flip mappings to get dimension id to name mappings
             $visitMappings = !empty($dimensionMappings['visit']) ? array_flip($dimensionMappings['visit']) : [];
             $actionMappings = !empty($dimensionMappings['action']) ? array_flip($dimensionMappings['action']) : [];
 
@@ -137,12 +137,12 @@ class VisitExpandService
      * Expand visit-level dimensions
      *
      * @param array $visit Visit data by reference
-     * @param array $mappings Dimension index to name mappings
+     * @param array $mappings Dimension id to name mappings
      */
     private function expandVisitDimensions(array &$visit, array $mappings)
     {
-        foreach ($mappings as $dimensionIndex => $dimensionName) {
-            $fieldName = 'dimension' . $dimensionIndex;
+        foreach ($mappings as $dimensionID => $dimensionName) {
+            $fieldName = 'dimension' . $dimensionId;
             if (array_key_exists($fieldName, $visit)) {
                 $visit[$dimensionName] = $visit[$fieldName];
             }
@@ -154,12 +154,12 @@ class VisitExpandService
      * Expand action-level dimensions
      *
      * @param array $action Action data by reference
-     * @param array $mappings Dimension index to name mappings
+     * @param array $mappings Dimension id to name mappings
      */
     private function expandActionDimensions(array &$action, array $mappings)
     {
-        foreach ($mappings as $dimensionIndex => $dimensionName) {
-            $fieldName = 'dimension' . $dimensionIndex;
+        foreach ($mappings as $dimensionId => $dimensionName) {
+            $fieldName = 'dimension' . $dimensionId;
             if (array_key_exists($fieldName, $action)) {
                 $action[$dimensionName] = $action[$fieldName];
             }
@@ -191,7 +191,7 @@ class VisitExpandService
             }
 
             $source = isset($eventIdConfig['source']) ? $eventIdConfig['source'] : null;
-            $customDimension = isset($eventIdConfig['dimension_index']) ? $eventIdConfig['dimension_index'] : null;
+            $customDimension = isset($eventIdConfig['dimension_id']) ? $eventIdConfig['dimension_id'] : null;
 
             if ($source === 'event_name') {
                 if (array_key_exists('eventName', $action)) {
@@ -200,7 +200,7 @@ class VisitExpandService
             }
             else if ($source === 'custom_dimension') {
                 if (empty($customDimension)) {
-                    $this->logger->warning('ConversionApi: No custom dimension index configured for event ID');
+                    $this->logger->warning('ConversionApi: No custom dimension ID configured for event ID');
                 } else {
                     $dimensionField = 'dimension' . $customDimension;
                     if (array_key_exists($dimensionField, $action)) {
@@ -221,12 +221,12 @@ class VisitExpandService
     {
         // klaroCookie is already initialized in initializeAllVariables
 
-        if (empty($consentConfig) || empty($consentConfig['dimension_index'])) {
+        if (empty($consentConfig) || empty($consentConfig['dimension_id'])) {
             return;
         }
 
-        $dimensionIndex = $consentConfig['dimension_index'];
-        $dimensionField = 'dimension' . $dimensionIndex;
+        $dimensionId = $consentConfig['dimension_id'];
+        $dimensionField = 'dimension' . $dimensionId;
 
         if (array_key_exists($dimensionField, $visit)) {
             $visit['klaroCookie'] = $visit[$dimensionField];

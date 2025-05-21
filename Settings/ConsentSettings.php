@@ -47,7 +47,7 @@ class ConsentSettings
     }
 
     /**
-     * Create setting for Klaro cookie dimension index
+     * Create setting for Klaro cookie dimension ID
      *
      * @return Setting
      */
@@ -60,11 +60,11 @@ class ConsentSettings
             function (FieldConfig $field) {
                 $field->title = "Klaro Cookie Dimension Index";
                 $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
-                $field->description = "Custom dimension index for storing the Klaro cookie value";
-                $field->inlineHelp = "Enter the visit-scope custom dimension index used to store Klaro consent data";
+                $field->description = "Custom dimension ID for storing the Klaro cookie value";
+                $field->inlineHelp = "Enter the visit-scope custom dimension ID used to store Klaro consent data";
                 $field->validate = function ($value) {
                     if (!empty($value) && (!is_numeric($value) || $value < 1)) {
-                        throw new \Exception('Dimension index must be a positive number');
+                        throw new \Exception('Dimension ID must be a positive number');
                     }
                 };
             }
@@ -134,18 +134,18 @@ class ConsentSettings
     /**
      * Get all consent configuration as an associative array
      *
-     * @return array Associative array with consent services and dimension index
+     * @return array Associative array with consent services and dimension ID
      */
     public function getConsentConfiguration()
     {
         $result = [
             'services' => $this->getConsentServices(),
-            'dimension_index' => null
+            'dimension_id' => null
         ];
 
         $dimensionIndex = $this->settings->klaroCookieDimension->getValue();
         if (!empty($dimensionIndex)) {
-            $result['dimension_index'] = (int)$dimensionIndex;
+            $result['dimension_id'] = (int)$dimensionIndex;
         }
 
         return $result;

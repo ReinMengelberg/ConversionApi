@@ -166,13 +166,13 @@ class EventSettings
             FieldConfig::TYPE_INT,
             function (FieldConfig $field) {
                 $field->title = 'Event ID Custom Dimension';
-                $field->description = 'Custom Dimension index to use as Event ID';
+                $field->description = 'Custom Dimension ID to use as Event ID';
                 $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
-                $field->inlineHelp = 'Enter the index of the action-scoped custom dimension that contains the Event ID';
+                $field->inlineHelp = 'Enter the ID of the action-scoped custom dimension that contains the Event ID';
                 $field->condition = 'event_id_source == "custom_dimension"';
                 $field->validate = function ($value) {
                     if (!empty($value) && (!is_numeric($value) || $value < 1)) {
-                        throw new \Exception('Custom Dimension index must be a positive number');
+                        throw new \Exception('Custom Dimension ID must be a positive number');
                     }
                 };
             }
@@ -190,7 +190,7 @@ class EventSettings
         $config = ['source' => $source];
 
         if ($source === 'custom_dimension') {
-            $config['dimension_index'] = (int)$this->settings->eventIdCustomDimension->getValue();
+            $config['dimension_id'] = (int)$this->settings->eventIdCustomDimension->getValue();
         }
 
         return $config;

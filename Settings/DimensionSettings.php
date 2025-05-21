@@ -87,11 +87,11 @@ class DimensionSettings
             function (FieldConfig $field) use ($title, $description) {
                 $field->title = $title;
                 $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
-                $field->description = "Maps $title to a custom dimension index";
+                $field->description = "Maps $title to a custom dimension ID";
                 $field->inlineHelp = $description;
                 $field->validate = function ($value) {
                     if (!empty($value) && (!is_numeric($value) || $value < 1)) {
-                        throw new \Exception('Dimension index must be a positive number');
+                        throw new \Exception('Dimension ID must be a positive number');
                     }
                 };
             }
@@ -116,11 +116,11 @@ class DimensionSettings
             function (FieldConfig $field) use ($title, $description) {
                 $field->title = $title;
                 $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
-                $field->description = "Maps $title to a custom dimension index";
+                $field->description = "Maps $title to a custom dimension ID";
                 $field->inlineHelp = $description;
                 $field->validate = function ($value) {
                     if (!empty($value) && (!is_numeric($value) || $value < 1)) {
-                        throw new \Exception('Dimension index must be a positive number');
+                        throw new \Exception('Dimension ID must be a positive number');
                     }
                 };
             }
