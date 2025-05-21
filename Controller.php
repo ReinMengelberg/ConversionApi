@@ -32,19 +32,32 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
         $settingsProvider = StaticContainer::get('Piwik\Plugin\SettingsProvider');
         $settings = $settingsProvider->getMeasurableSettings('ConversionApi', $idSite);
 
+        // Create a variable to hold flash message
+        $updated = false;
+
+        // Check for flash message in session
+        $session = new \Piwik\Session\SessionNamespace('ConversionApi');
+        if (!empty($session->apiSettingsUpdated)) {
+            $updated = true;
+            // Clear the flash message
+            $session->apiSettingsUpdated = null;
+        }
+
         if (Common::getRequestVar('submitted', '', 'string') === 'true') {
             // Process form submission
             $this->processFormSubmission($settings);
 
-            // Redirect to prevent form resubmission
+            // Set flash message in session instead of URL parameter
+            $session->apiSettingsUpdated = true;
+
+            // Redirect to prevent form resubmission (without updated parameter)
             $params = [
                 'module' => 'ConversionApi',
                 'action' => 'siteApiSettings',
-                'idSite' => $idSite,
-                'updated' => 1
+                'idSite' => $idSite
             ];
 
-            // Use standard PHP function instead of missing Piwik method
+            // Use standard PHP function
             $url = 'index.php?' . http_build_query($params);
             Url::redirectToUrl($url);
         }
@@ -54,7 +67,7 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
             'settings' => $settings,
             'idSite' => $idSite,
             'siteName' => Site::getNameFor($idSite),
-            'updated' => Common::getRequestVar('updated', 0, 'int')
+            'updated' => $updated // Pass the flash message variable
         ]);
     }
 
@@ -67,16 +80,29 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
         $settingsProvider = StaticContainer::get('Piwik\Plugin\SettingsProvider');
         $settings = $settingsProvider->getMeasurableSettings('ConversionApi', $idSite);
 
+        // Create a variable to hold flash message
+        $updated = false;
+
+        // Check for flash message in session
+        $session = new \Piwik\Session\SessionNamespace('ConversionApi');
+        if (!empty($session->dimensionsUpdated)) {
+            $updated = true;
+            // Clear the flash message
+            $session->dimensionsUpdated = null;
+        }
+
         if (Common::getRequestVar('submitted', '', 'string') === 'true') {
             // Process form submission
             $this->processDimensionsFormSubmission($settings);
 
-            // Redirect to prevent form resubmission
+            // Set flash message in session instead of URL parameter
+            $session->dimensionsUpdated = true;
+
+            // Redirect to prevent form resubmission (without updated parameter)
             $params = [
                 'module' => 'ConversionApi',
                 'action' => 'siteDimensionsSettings',
-                'idSite' => $idSite,
-                'updated' => 1
+                'idSite' => $idSite
             ];
 
             // Use standard PHP function
@@ -89,7 +115,7 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
             'settings' => $settings,
             'idSite' => $idSite,
             'siteName' => Site::getNameFor($idSite),
-            'updated' => Common::getRequestVar('updated', 0, 'int')
+            'updated' => $updated // Pass the flash message variable
         ]);
     }
 
@@ -102,16 +128,29 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
         $settingsProvider = StaticContainer::get('Piwik\Plugin\SettingsProvider');
         $settings = $settingsProvider->getMeasurableSettings('ConversionApi', $idSite);
 
+        // Create a variable to hold flash message
+        $updated = false;
+
+        // Check for flash message in session
+        $session = new \Piwik\Session\SessionNamespace('ConversionApi');
+        if (!empty($session->eventSettingsUpdated)) {
+            $updated = true;
+            // Clear the flash message
+            $session->eventSettingsUpdated = null;
+        }
+
         if (Common::getRequestVar('submitted', '', 'string') === 'true') {
             // Process form submission
             $this->processEventFormSubmission($settings);  // FIXED: Changed method name to match implementation
 
-            // Redirect to prevent form resubmission
+            // Set flash message in session instead of URL parameter
+            $session->eventSettingsUpdated = true;
+
+            // Redirect to prevent form resubmission (without updated parameter)
             $params = [
                 'module' => 'ConversionApi',
                 'action' => 'siteEventSettings',
-                'idSite' => $idSite,
-                'updated' => 1
+                'idSite' => $idSite
             ];
 
             // Use standard PHP function
@@ -124,7 +163,7 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
             'settings' => $settings,
             'idSite' => $idSite,
             'siteName' => Site::getNameFor($idSite),
-            'updated' => Common::getRequestVar('updated', 0, 'int')
+            'updated' => $updated // Pass the flash message variable
         ]);
     }
 
@@ -140,16 +179,29 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
         $settingsProvider = StaticContainer::get('Piwik\Plugin\SettingsProvider');
         $settings = $settingsProvider->getMeasurableSettings('ConversionApi', $idSite);
 
+        // Create a variable to hold flash message
+        $updated = false;
+
+        // Check for flash message in session
+        $session = new \Piwik\Session\SessionNamespace('ConversionApi');
+        if (!empty($session->consentSettingsUpdated)) {
+            $updated = true;
+            // Clear the flash message
+            $session->consentSettingsUpdated = null;
+        }
+
         if (Common::getRequestVar('submitted', '', 'string') === 'true') {
             // Process form submission
             $this->processConsentFormSubmission($settings);
 
-            // Redirect to prevent form resubmission
+            // Set flash message in session instead of URL parameter
+            $session->consentSettingsUpdated = true;
+
+            // Redirect to prevent form resubmission (without updated parameter)
             $params = [
                 'module' => 'ConversionApi',
                 'action' => 'siteConsentSettings',
-                'idSite' => $idSite,
-                'updated' => 1
+                'idSite' => $idSite
             ];
 
             // Use standard PHP function
@@ -162,7 +214,7 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
             'settings' => $settings,
             'idSite' => $idSite,
             'siteName' => Site::getNameFor($idSite),
-            'updated' => Common::getRequestVar('updated', 0, 'int')
+            'updated' => $updated // Pass the flash message variable
         ]);
     }
 

@@ -22,9 +22,21 @@
 
     <div class="settings-content">
         {% if updated is defined and updated %}
-            <div piwik-notification context="success">
-                Event configuration successfully saved.
+            <div class="alert alert-success notifications" role="alert" id="saveNotification">
+                <p class="text">Event settings successfully saved.</p>
+                <button type="button" class="close"
+                        onclick="this.parentElement.style.display='none';">×
+                </button>
             </div>
+            <script>
+                // Auto-hide notification after 5 seconds
+                setTimeout(function() {
+                    const notification = document.getElementById('saveNotification');
+                    if (notification) {
+                        notification.style.display = 'none';
+                    }
+                }, 5000);
+            </script>
         {% endif %}
 
         <form method="post" action="{{ linkTo({module: 'ConversionApi', action: 'siteEventSettings', idSite: idSite}) }}" id="eventSettingsForm">
@@ -536,6 +548,34 @@
         .description {
             margin-bottom: 20px;
             color: #555;
+        }
+
+        .notifications {
+            position: relative;
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #dff0d8;
+            border: 1px solid #d6e9c6;
+            color: #3c763d;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .notifications .text {
+            padding-left: 40px;
+        }
+
+        .notifications .close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #3c763d;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 10px;
         }
 
         /* Responsive adjustments */

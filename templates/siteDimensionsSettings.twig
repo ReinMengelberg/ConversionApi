@@ -22,9 +22,21 @@
 
     <div class="settings-content">
         {% if updated is defined and updated %}
-            <div piwik-notification context="success">
-                Custom dimensions mapping successfully saved.
+            <div class="alert alert-success notifications" role="alert" id="saveNotification">
+                <p class="text">Dimensions setting successfully saved.</p>
+                <button type="button" class="close"
+                        onclick="this.parentElement.style.display='none';">×
+                </button>
             </div>
+            <script>
+                // Auto-hide notification after 5 seconds
+                setTimeout(function() {
+                    const notification = document.getElementById('saveNotification');
+                    if (notification) {
+                        notification.style.display = 'none';
+                    }
+                }, 5000);
+            </script>
         {% endif %}
 
         <form method="post" action="{{ linkTo({module: 'ConversionApi', action: 'siteDimensionsSettings', idSite: idSite}) }}" id="customDimensionsForm">
@@ -266,7 +278,7 @@
                     <p class="description">Map predefined variables to action-scope custom dimension indexes</p>
 
                     <div class="alert alert-info">
-                        <p>No action scope variables are currently defined. This section is prepared for future use.</p>
+                        <p class="text">No action scope variables are currently defined. This section is prepared for future use.</p>
                     </div>
 
                     {# Uncomment and modify when needed for action dimensions
@@ -573,6 +585,38 @@
             padding: 15px;
             border-radius: 4px;
             margin-bottom: 20px;
+        }
+
+        .alert-info .text {
+            padding-left: 40px;
+        }
+
+        .notifications {
+            position: relative;
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #dff0d8;
+            border: 1px solid #d6e9c6;
+            color: #3c763d;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .notifications .text {
+            padding-left: 40px;
+        }
+
+        .notifications .close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #3c763d;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 10px;
         }
 
         /* Responsive adjustments */
