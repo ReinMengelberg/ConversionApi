@@ -65,33 +65,34 @@ class VisitFormatService
             foreach ($visits as $visitId => $visit) {
                 $formattedVisit = $visit;
                 $this->initializeAllFormattedVariables($formattedVisit);
-                $nameResult = $this->formatNameValue(
-                    isset($formattedVisit['nameValue']) ? $formattedVisit['nameValue'] : null
-                );
-                $formattedVisit = array_merge($formattedVisit, $nameResult);
-                $emailResult = $this->formatEmailValue(
-                    isset($formattedVisit['emailValue']) ? $formattedVisit['emailValue'] : null
-                );
-                $formattedVisit = array_merge($formattedVisit, $emailResult);
-                $phoneResult = $this->formatPhoneValue(
-                    isset($formattedVisit['phoneValue']) ? $formattedVisit['phoneValue'] : null,
-                    $phoneCountryCode
-                );
-                $formattedVisit = array_merge($formattedVisit, $phoneResult);
-                $genderResult = $this->formatGenderValue(
-                    isset($formattedVisit['genderValue']) ? $formattedVisit['genderValue'] : null
-                );
-                $formattedVisit = array_merge($formattedVisit, $genderResult);
-                $birthdayResult = $this->formatBirthdayValue(
-                    isset($formattedVisit['birthdayValue']) ? $formattedVisit['birthdayValue'] : null
-                );
-                $formattedVisit = array_merge($formattedVisit, $birthdayResult);
+
+                // Format name
+                $formattedVisit = array_merge($formattedVisit,
+                    $this->formatNameValue($formattedVisit['nameValue'] ?? null) ?? []);
+
+                // Format email
+                $formattedVisit = array_merge($formattedVisit,
+                    $this->formatEmailValue($formattedVisit['emailValue'] ?? null) ?? []);
+
+                // Format phone
+                $formattedVisit = array_merge($formattedVisit,
+                    $this->formatPhoneValue($formattedVisit['phoneValue'] ?? null, $phoneCountryCode) ?? []);
+
+                // Format gender
+                $formattedVisit = array_merge($formattedVisit,
+                    ['formattedGenderValue' => $this->formatGenderValue($formattedVisit['genderValue'] ?? null)]);
+
+                // Format birthday
+                $formattedVisit = array_merge($formattedVisit,
+                    ['formattedBirthdayValue' => $this->formatBirthdayValue($formattedVisit['birthdayValue'] ?? null)]);
+
+                // Format address fields
                 $addressFields = ['addressValue', 'zipValue', 'regionValue', 'countryCodeValue', 'cityValue'];
                 foreach ($addressFields as $field) {
-                    $formattedVisit['formatted' . ucfirst($field)] = $this->formatAddressValue(
-                        isset($formattedVisit[$field]) ? $formattedVisit[$field] : null
-                    );
+                    $formattedVisit['formatted' . ucfirst($field)] =
+                        $this->formatAddressValue($formattedVisit[$field] ?? null);
                 }
+
                 $formattedVisits[$visitId] = $formattedVisit;
             }
             return $formattedVisits;
@@ -146,7 +147,7 @@ class VisitFormatService
         if (!$hasCountryCode && !empty($countryCode)) {
             $cleaned = $countryCode . $cleaned;
         }
-        $formattedPhone = '+' . $cleaned;
+        $formattedPhone = $cleaned;
         return [
             'phoneValue' => $originalPhone,
             'formattedPhoneValue' => $formattedPhone
@@ -181,11 +182,10 @@ class VisitFormatService
         $nameParts = explode(' ', $nameValue);
         if (count($nameParts) == 1) {
             $firstName = $nameParts[0];
-            $lastName = null;
             $formattedFirst = $this->formatTextValue($firstName);
             return [
                 'firstNameValue' => $firstName,
-                'lastNameValue' => $lastName,
+                'lastNameValue' => null,
                 'formattedFirstNameValue' => $formattedFirst,
                 'formattedLastNameValue' => null
             ];
@@ -257,7 +257,7 @@ class VisitFormatService
      * @param bool $capitalize Whether to capitalize the first letter (default: true)
      * @return string|null The formatted text
      */
-    private function formatTextValue($value, $capitalize = true)
+    private function formatTextValue($value)
     {
         if (empty($value)) {
             return null;
@@ -267,17 +267,9 @@ class VisitFormatService
         }
         $value = trim($value);
         $value = mb_strtolower($value, 'UTF-8');
-        if (function_exists('transliterator_transliterate')) {
-            $value = transliterator_transliterate('Any-Latin; Latin-ASCII', $value);
-        } else {
-            $search = ['á', 'à', 'â', 'ä', 'ã', 'å', 'ç', 'é', 'è', 'ê', 'ë', 'í', 'ì', 'î', 'ï',
-                'ñ', 'ó', 'ò', 'ô', 'ö', 'õ', 'ú', 'ù', 'û', 'ü', 'ý', 'ÿ', 'ß'];
-            $replace = ['a', 'a', 'a', 'a', 'a', 'a', 'c', 'e', 'e', 'e', 'e', 'i', 'i', 'i', 'i',
-                'n', 'o', 'o', 'o', 'o', 'o', 'u', 'u', 'u', 'u', 'y', 'y', 'ss'];
-            $value = str_replace($search, $replace, $value);
-        }
+        $value = transliterator_transliterate('Any-Latin; Latin-ASCII', $value);
         $value = preg_replace('/[^a-z0-9]/', '', $value);
-        return $capitalize ? ucfirst($value) : $value;
+        return $value;
     }
 
     /**

@@ -141,7 +141,7 @@ class VisitExpandService
      */
     private function expandVisitDimensions(array &$visit, array $mappings)
     {
-        foreach ($mappings as $dimensionID => $dimensionName) {
+        foreach ($mappings as $dimensionId => $dimensionName) {
             $fieldName = 'dimension' . $dimensionId;
             if (array_key_exists($fieldName, $visit)) {
                 $visit[$dimensionName] = $visit[$fieldName];

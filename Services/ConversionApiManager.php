@@ -104,35 +104,35 @@ class ConversionApiManager
             return;
         }
 
-        // Get conversion data
-        $visits = $this->visitDataService->getVisits($idSite, $startDate, $endDate);
+        // Logging function
+        $loggedVisitIndex = 1;
 
-        // If no conversions, nothing to do
+        // Get visits
+//        $visits = $this->visitDataService->getVisits($idSite, $startDate, $endDate);
+//        if (empty($visits)) {
+//            $this->logger->info('ConversionApi: No visit data found for site {idSite} in the specified period', ['idSite' => $idSite]);
+//            return;
+//        }
+
+        // Predefined Visits
+        $visitsFile = PIWIK_DOCUMENT_ROOT . '/plugins/ConversionApi/tmp/visits.json';
+        if (!file_exists($visitsFile)) {
+            $this->logger->error('ConversionApi: Visits file not found at: ' . $visitsFile);
+            return;
+        }
+        $visits = json_decode(file_get_contents($visitsFile), true);
         if (empty($visits)) {
-            $this->logger->info('ConversionApi: No visit data found for site {idSite} in the specified period', ['idSite' => $idSite]);
+            $this->logger->info('ConversionApi: No visit data found in visits.json for site {idSite}', ['idSite' => $idSite]);
             return;
         }
 
-        $siteSettings = new MeasurableSettings($idSite);
+        // Pre-process data with Services
+        $expandedVisits = $this->visitExpandService->expandVisits($visits, $settings);
+        $formattedVisits = $this->visitFormatService->formatVisits($expandedVisits, $settings);
+        $hashedVisits = $this->visitHashService->hashVisits($formattedVisits, $settings);
 
-        // Logging function
-        $loggedVisitIndex = 19;
 
-        $this->logVisit($visits[$loggedVisitIndex], '/plugins/ConversionApi/tmp/visit_debug.json');
-
-        // Pre-process data with expanding service
-        $expandedVisits = $this->visitExpandService->expandVisits($visits, $siteSettings);
-        $this->logger->info('ConversionApi: DEBUG - Expanded visits');
-        $this->logVisit($expandedVisits[$loggedVisitIndex], '/plugins/ConversionApi/tmp/visit_debug_expanded.json');
-
-        // Pre-process data with format service
-        $formattedVisits = $this->visitFormatService->formatVisits($expandedVisits, $siteSettings);
-        $this->logger->info('ConversionApi: DEBUG - Formatted visits');
-        $this->logVisit($formattedVisits[$loggedVisitIndex], '/plugins/ConversionApi/tmp/visit_debug_formatted.json');
-
-        // Pre-process data with hasing service
-        $hashedVisits = $this->visitHashService->hashVisits($formattedVisits, $siteSettings);
-        $this->logger->info('ConversionApi: DEBUG - Hashed visits');
+        $this->logger->info('ConversionApi: DEBUG - Expanded, Formatted and Hashed visits:');;
         $this->logVisit($hashedVisits[$loggedVisitIndex], '/plugins/ConversionApi/tmp/visit_debug_hashed.json');
 
         // Process Meta if enabled
