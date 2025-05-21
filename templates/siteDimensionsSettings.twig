@@ -213,7 +213,7 @@
                         <div class="form-table-row">
                             <div class="form-table-cell form-label-cell">
                                 <label for="fbc_dimension">Facebook Click ID (_fbc)</label>
-                                <div class="form-help">Facebook click identifier for ad attribution</div>
+                                <div class="form-help">Facebook click identifier from cookie for ad attribution</div>
                             </div>
                             <div class="form-table-cell">
                                 <input type="number"
@@ -227,7 +227,7 @@
                         <div class="form-table-row">
                             <div class="form-table-cell form-label-cell">
                                 <label for="fbp_dimension">Facebook Browser ID (_fbp)</label>
-                                <div class="form-help">Facebook browser identifier for cross-site tracking</div>
+                                <div class="form-help">Facebook browser identifier from cookie for cross-site tracking</div>
                             </div>
                             <div class="form-table-cell">
                                 <input type="number"
@@ -235,6 +235,20 @@
                                        name="visit_dimensions[_fbp]"
                                        class="form-control"
                                        value="{{ settings.visitDimensions['_fbp'].getValue()|default('') }}" />
+                            </div>
+                        </div>
+
+                        <div class="form-table-row">
+                            <div class="form-table-cell form-label-cell">
+                                <label for="fbclid_dimension">Facebook Click ID (fbclid)</label>
+                                <div class="form-help">Facebook click identifier from URL for Ad campaign tracking</div>
+                            </div>
+                            <div class="form-table-cell">
+                                <input type="number"
+                                       id="fbclid_dimension"
+                                       name="visit_dimensions[fbclid]"
+                                       class="form-control"
+                                       value="{{ settings.visitDimensions['fbclid'].getValue()|default('') }}" />
                             </div>
                         </div>
 

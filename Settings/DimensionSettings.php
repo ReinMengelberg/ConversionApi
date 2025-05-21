@@ -28,6 +28,7 @@ class DimensionSettings
         'countryCodeValue', // Defaults to GeoIP2 'country' value
         '_fbc',
         '_fbp',
+        'fbclid',
         'gclid',
         'li_fat_id'
     ];
@@ -194,6 +195,7 @@ class DimensionSettings
             'klaroCookie' => 'Klaro Cookie',
             '_fbc' => 'Facebook Click ID (_fbc)',
             '_fbp' => 'Facebook Browser ID (_fbp)',
+            'fbclid' => 'Facebook Click ID (fbclid)',
             'gclid' => 'Google Click ID (gclid)',
             'li_fat_id' => 'LinkedIn First-Party Ad Tracking ID (li_fat_id)',
             'phoneValueCountryCode' => 'Phone Country Code',
@@ -225,10 +227,11 @@ class DimensionSettings
             'countryCodeValue' => 'User\'s country code in ISO 3166-1 alpha-2 format, captured from forms or user input, defaults to GeoIP2 countryCode value if not set',
 
             // Marketing
-            '_fbc' => 'Facebook click identifier for ad attribution',
-            '_fbp' => 'Facebook browser identifier for cross-site tracking',
-            'gclid' => 'Google Click ID for AdWords campaign tracking',
-            'li_fat_id' => 'LinkedIn First-Party Ad Tracking ID for AdWords campaign tracking',
+            '_fbc' => 'Facebook click identifier from cookie for ad attribution',
+            '_fbp' => 'Facebook browser identifier from cookie for cross-site tracking',
+            'fbclid' => 'Facebook click identifier from url params for ad attribution',
+            'gclid' => 'Google Click ID for campaign tracking',
+            'li_fat_id' => 'LinkedIn First-Party Ad Tracking ID for campaign tracking',
 
             // Formatting
             'phoneValueCountryCode' => 'Default country code for processing phone numbers (e.g., "31" for the Netherlands)',
