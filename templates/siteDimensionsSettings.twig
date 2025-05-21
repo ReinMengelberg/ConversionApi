@@ -170,15 +170,15 @@
 
                         <div class="form-table-row">
                             <div class="form-table-cell form-label-cell">
-                                <label for="addressValue_dimension">City Value (cityValue)</label>
-                                <div class="form-help">User's address captured from forms or user input (will default to GeoIP2 city)</div>
+                                <label for="cityValue_dimension">City Value (cityValue)</label>
+                                <div class="form-help">User's city captured from forms or user input (will default to GeoIP2 city)</div>
                             </div>
                             <div class="form-table-cell">
                                 <input type="number"
-                                       id="addressValue_dimension"
-                                       name="visit_dimensions[addressValue]"
+                                       id="cityValue_dimension"
+                                       name="visit_dimensions[cityValue]"
                                        class="form-control"
-                                       value="{{ settings.visitDimensions['addressValue'].getValue()|default('') }}" />
+                                       value="{{ settings.visitDimensions['cityValue'].getValue()|default('') }}" />
                             </div>
                         </div>
 
