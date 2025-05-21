@@ -22,7 +22,7 @@ class VisitExpandService
         'emailValue',
         'nameValue',
         'phoneValue',
-        'birthDateValue',
+        'birthdayValue',
         'genderValue',
         'addressValue',
         'zipValue',

@@ -28,6 +28,8 @@ class VisitFormatService
         'formattedLastNameValue',
         'formattedEmailValue',
         'formattedPhoneValue',
+        'formattedGenderValue',
+        'formattedBirthdayValue',
         'formattedAddressValue',
         'formattedZipValue',
         'formattedRegionValue',
@@ -60,49 +62,42 @@ class VisitFormatService
             // Get formatting settings
             $phoneCountryCode = $settings->transformations['phoneValueCountryCode']->getValue();
 
-            // Process each visit
             foreach ($visits as $visitId => $visit) {
-                // Create a copy of the visit to format
                 $formattedVisit = $visit;
-
-                // Initialize all formatted variables with null values
                 $this->initializeAllFormattedVariables($formattedVisit);
-
-                // Format phone number
+                $nameResult = $this->formatNameValue(
+                    isset($formattedVisit['nameValue']) ? $formattedVisit['nameValue'] : null
+                );
+                $formattedVisit = array_merge($formattedVisit, $nameResult);
+                $emailResult = $this->formatEmailValue(
+                    isset($formattedVisit['emailValue']) ? $formattedVisit['emailValue'] : null
+                );
+                $formattedVisit = array_merge($formattedVisit, $emailResult);
                 $phoneResult = $this->formatPhoneValue(
                     isset($formattedVisit['phoneValue']) ? $formattedVisit['phoneValue'] : null,
                     $phoneCountryCode
                 );
                 $formattedVisit = array_merge($formattedVisit, $phoneResult);
-
-                // Format name components
-                $nameResult = $this->formatNameValue(
-                    isset($formattedVisit['nameValue']) ? $formattedVisit['nameValue'] : null
+                $genderResult = $this->formatGenderValue(
+                    isset($formattedVisit['genderValue']) ? $formattedVisit['genderValue'] : null
                 );
-                $formattedVisit = array_merge($formattedVisit, $nameResult);
-
-                // Format email
-                $emailResult = $this->formatEmailValue(
-                    isset($formattedVisit['emailValue']) ? $formattedVisit['emailValue'] : null
+                $formattedVisit = array_merge($formattedVisit, $genderResult);
+                $birthdayResult = $this->formatBirthdayValue(
+                    isset($formattedVisit['birthdayValue']) ? $formattedVisit['birthdayValue'] : null
                 );
-                $formattedVisit = array_merge($formattedVisit, $emailResult);
-
-                // Format address fields
+                $formattedVisit = array_merge($formattedVisit, $birthdayResult);
                 $addressFields = ['addressValue', 'zipValue', 'regionValue', 'countryCodeValue', 'cityValue'];
                 foreach ($addressFields as $field) {
                     $formattedVisit['formatted' . ucfirst($field)] = $this->formatAddressValue(
                         isset($formattedVisit[$field]) ? $formattedVisit[$field] : null
                     );
                 }
-
-                // Add the formatted visit to the result array
                 $formattedVisits[$visitId] = $formattedVisit;
             }
-
             return $formattedVisits;
         } catch (\Exception $e) {
             $this->logger->error('Error formatting visits: ' . $e->getMessage());
-            return $visits; // Return original visits data in case of error
+            return $visits;
         }
     }
 
@@ -138,38 +133,20 @@ class VisitFormatService
                 'formattedPhoneValue' => null
             ];
         }
-
-        // Preserve original value
         $originalPhone = $phoneValue;
-
-        // Remove all non-digit characters except leading '+'
         $cleaned = preg_replace('/[^\d+]/', '', $phoneValue);
-
-        // Check if the number already has a + prefix
         $hasPlus = (substr($cleaned, 0, 1) === '+');
-
-        // Remove the + if it exists
         if ($hasPlus) {
             $cleaned = substr($cleaned, 1);
         }
-
-        // Remove leading zeros
         $cleaned = ltrim($cleaned, '0');
-
-        // Determine if country code is already included
-        // This is a simplified check - a real implementation might use libphonenumber
         $hasCountryCode = $hasPlus ||
             (strlen($cleaned) > 10) ||
             (substr($cleaned, 0, strlen($countryCode)) === $countryCode);
-
-        // Add country code if not present
         if (!$hasCountryCode && !empty($countryCode)) {
             $cleaned = $countryCode . $cleaned;
         }
-
-        // Format to E164 (always add + prefix)
         $formattedPhone = '+' . $cleaned;
-
         return [
             'phoneValue' => $originalPhone,
             'formattedPhoneValue' => $formattedPhone
@@ -189,7 +166,6 @@ class VisitFormatService
      */
     public function formatNameValue($nameValue)
     {
-        // Handle empty input
         if (empty($nameValue)) {
             return [
                 'firstNameValue' => null,
@@ -198,26 +174,15 @@ class VisitFormatService
                 'formattedLastNameValue' => null
             ];
         }
-
-        // Ensure we're working with UTF-8
         if (!mb_check_encoding($nameValue, 'UTF-8')) {
             $nameValue = mb_convert_encoding($nameValue, 'UTF-8');
         }
-
-        // Trim and normalize whitespace
         $nameValue = trim(preg_replace('/\s+/', ' ', $nameValue));
-
-        // Split the name into parts
         $nameParts = explode(' ', $nameValue);
-
-        // Handle single-part names
         if (count($nameParts) == 1) {
             $firstName = $nameParts[0];
             $lastName = null;
-
-            // Create formatted versions
             $formattedFirst = $this->formatTextValue($firstName);
-
             return [
                 'firstNameValue' => $firstName,
                 'lastNameValue' => $lastName,
@@ -225,14 +190,8 @@ class VisitFormatService
                 'formattedLastNameValue' => null
             ];
         }
-
-        // First name is the first part
         $firstName = array_shift($nameParts);
-
-        // Last name is everything else joined together
         $lastName = implode(' ', $nameParts);
-
-        // Create formatted versions
         $formattedFirst = $this->formatTextValue($firstName);
         $formattedLast = $this->formatTextValue($lastName);
 
@@ -260,13 +219,8 @@ class VisitFormatService
                 'formattedEmailValue' => null
             ];
         }
-
-        // Preserve original value
         $originalEmail = $emailValue;
-
-        // Basic email formatting
         $formattedEmail = strtolower(trim($emailValue));
-
         return [
             'emailValue' => $originalEmail,
             'formattedEmailValue' => $formattedEmail
@@ -288,7 +242,6 @@ class VisitFormatService
         if (empty($addressValue)) {
             return null;
         }
-
         return $this->formatTextValue($addressValue, false);
     }
 
@@ -309,35 +262,68 @@ class VisitFormatService
         if (empty($value)) {
             return null;
         }
-
-        // Ensure we're working with UTF-8
         if (!mb_check_encoding($value, 'UTF-8')) {
             $value = mb_convert_encoding($value, 'UTF-8');
         }
-
-        // Trim whitespace
         $value = trim($value);
-
-        // Convert to lowercase
         $value = mb_strtolower($value, 'UTF-8');
-
-        // Transliterate non-Latin characters to their romanized equivalents
         if (function_exists('transliterator_transliterate')) {
-            // Use intl extension if available
             $value = transliterator_transliterate('Any-Latin; Latin-ASCII', $value);
         } else {
-            // Fallback for common accented characters
             $search = ['á', 'à', 'â', 'ä', 'ã', 'å', 'ç', 'é', 'è', 'ê', 'ë', 'í', 'ì', 'î', 'ï',
                 'ñ', 'ó', 'ò', 'ô', 'ö', 'õ', 'ú', 'ù', 'û', 'ü', 'ý', 'ÿ', 'ß'];
             $replace = ['a', 'a', 'a', 'a', 'a', 'a', 'c', 'e', 'e', 'e', 'e', 'i', 'i', 'i', 'i',
                 'n', 'o', 'o', 'o', 'o', 'o', 'u', 'u', 'u', 'u', 'y', 'y', 'ss'];
             $value = str_replace($search, $replace, $value);
         }
-
-        // Remove non-alphanumeric characters (leaving only a-z and 0-9)
         $value = preg_replace('/[^a-z0-9]/', '', $value);
-
-        // Capitalize first letter if requested
         return $capitalize ? ucfirst($value) : $value;
+    }
+
+    /**
+     * Format gender value to standardized format
+     * Converts full gender words to single letter format (male -> m, female -> f)
+     *
+     * @param string|null $genderValue The gender value to format
+     * @return string|null The formatted gender value (m/f) or null if invalid/empty
+     */
+    private function formatGenderValue(?string $genderValue): ?string
+    {
+        if (empty($genderValue)) {
+            return null;
+        }
+        $genderValue = strtolower(trim($genderValue));
+        if ($genderValue === 'male') {
+            return 'm';
+        }
+        if ($genderValue === 'female') {
+            return 'f';
+        }
+        return null;
+    }
+
+    /**
+     * Format birthday value to YYYYMMDD format
+     * Handles multiple input formats including DD/MM/YYYY, DD-MM-YYYY and standard date strings
+     *
+     * @param string|null $dateString The date string to format
+     * @return string The formatted date in YYYYMMDD format or empty string if invalid/empty
+     */
+    function formatBirthdayValue($dateString)
+    {
+        if (empty($dateString)) {
+            return '';
+        }
+        if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/', $dateString, $matches)) {
+            $day = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
+            $month = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
+            $year = $matches[3];
+            return $year . $month . $day;
+        }
+        $timestamp = strtotime($dateString);
+        if ($timestamp === false) {
+            return '';
+        }
+        return date('Ymd', $timestamp);
     }
 }

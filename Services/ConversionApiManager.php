@@ -116,7 +116,7 @@ class ConversionApiManager
         $siteSettings = new MeasurableSettings($idSite);
 
         // Logging function
-        $loggedVisitIndex = 2;
+        $loggedVisitIndex = 19;
 
         $this->logVisit($visits[$loggedVisitIndex], '/plugins/ConversionApi/tmp/visit_debug.json');
 
@@ -136,21 +136,21 @@ class ConversionApiManager
         $this->logVisit($hashedVisits[$loggedVisitIndex], '/plugins/ConversionApi/tmp/visit_debug_hashed.json');
 
         // Process Meta if enabled
-        try {
-            if ($settings->metaSyncVisits->getValue() && $this->isMetaEnabled($settings)) {
-                $this->processMetaVisits($idSite, $hashedVisits, $settings);
-            }
-        } catch (MissingConfigurationException $e) {
-            $this->logger->warning('ConversionApi: {message} for site {idSite}. Skipping Meta integration.', [
-                'message' => $e->getMessage(),
-                'idSite' => $idSite
-            ]);
-        } catch (\Exception $e) {
-            $this->logger->error('ConversionApi: Error processing Meta integration for site {idSite}: {message}. Continuing with other integrations.', [
-                'idSite' => $idSite,
-                'message' => $e->getMessage()
-            ]);
-        }
+//        try {
+//            if ($settings->metaSyncVisits->getValue() && $this->isMetaEnabled($settings)) {
+//                $this->processMetaVisits($idSite, $hashedVisits, $settings);
+//            }
+//        } catch (MissingConfigurationException $e) {
+//            $this->logger->warning('ConversionApi: {message} for site {idSite}. Skipping Meta integration.', [
+//                'message' => $e->getMessage(),
+//                'idSite' => $idSite
+//            ]);
+//        } catch (\Exception $e) {
+//            $this->logger->error('ConversionApi: Error processing Meta integration for site {idSite}: {message}. Continuing with other integrations.', [
+//                'idSite' => $idSite,
+//                'message' => $e->getMessage()
+//            ]);
+//        }
 
         // Process Google if enabled
         try {

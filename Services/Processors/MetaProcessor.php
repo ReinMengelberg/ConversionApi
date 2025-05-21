@@ -199,43 +199,20 @@ class MetaProcessor
                         'opt_out' => false
                     ];
 
-                    // Add product data if available
-                    if (!empty($action['productViewSku'])) {
-                        $event['custom_data'] = [
-                            'content_ids' => [$action['productViewSku']],
-                            'content_name' => $action['productViewName'] ?? '',
-                            'content_type' => 'product',
-                            'value' => $action['productViewPrice'] ?? 0,
-                            'currency' => $visit['siteCurrency'] ?? 'EUR'
-                        ];
-
-                        if (!empty($action['productViewCategories'])) {
-                            $event['custom_data']['content_category'] = $action['productViewCategories'][0] ?? '';
-                        }
-                    }
-
                     $events[] = $event;
-
-                    $this->logger->debug('MetaProcessor: Added ViewContent event', [
-                        'event_id' => $eventId,
-                        'url' => $eventSourceUrl
-                    ]);
-                }
-
-                // Process custom events with category mapping
+                } // Process custom events with category mapping
                 elseif ($action['type'] === 'event') {
                     $eventCategory = $action['eventCategory'] ?? '';
-                    $eventMapping = [
-                        'opportunity' => 'Lead',
-                        'account' => 'CompleteRegistration',
-                        'appointment' => 'Schedule',
-                        'applicant' => 'SubmitApplication'
-                    ];
 
-                    if (isset($eventMapping[strtolower($eventCategory)])) {
-                        $metaEventName = $eventMapping[strtolower($eventCategory)];
-                        $eventTime = $this->getTimestamp($action['timestamp'] ?? time());
-                        $eventId = $action['eventName'] ?? md5($eventCategory . $eventTime);
+                    // Create EventSettings instance with site settings
+                    $eventSettings = new \Piwik\Plugins\ConversionApi\Settings\EventSettings($settings);
+
+                    // Use the EventSettings to get the Meta event name based on the configured category mappings
+                    $metaEventName = $eventSettings->getStandardEventName($eventCategory, 'meta');
+
+                    if ($metaEventName) {
+                        $metaEventName = $eventSettings->getStandardEventName($eventCategory, 'meta');
+                        $eventId = $action['id'];
                         $eventSourceUrl = $action['url'] ?? '';
 
                         $event = [
@@ -249,60 +226,11 @@ class MetaProcessor
                         ];
                         $events[] = $event;
 
-                        $this->logger->debug('MetaProcessor: Added custom event', [
-                            'event_name' => $metaEventName,
-                            'event_id' => $eventId,
+                    } else {
+                        $this->logger->warning('MetaProcessor: No Meta event mapping found for category {category}', [
                             'category' => $eventCategory
                         ]);
                     }
-                }
-
-                // Process ecommerce orders
-                elseif ($action['type'] === 'ecommerceOrder' && $personalConsent) {
-                    $eventTime = $this->getTimestamp($action['timestamp'] ?? time());
-                    $eventId = $action['orderId'] ?? ('order_' . $idVisit);
-                    $eventSourceUrl = $visit['referrerUrl'] ?? '';
-
-                    $event = [
-                        'event_name' => 'Purchase',
-                        'event_time' => $eventTime,
-                        'event_id' => $eventId,
-                        'event_source_url' => $eventSourceUrl,
-                        'action_source' => 'website',
-                        'user_data' => $userData,
-                        'opt_out' => false,
-                        'custom_data' => [
-                            'currency' => $visit['siteCurrency'] ?? 'EUR',
-                            'value' => $action['revenue'] ?? 0
-                        ]
-                    ];
-
-                    // Add item-specific data if available
-                    if (!empty($action['itemDetails'])) {
-                        $contentIds = [];
-                        foreach ($action['itemDetails'] as $item) {
-                            $contentIds[] = $item['itemSKU'];
-                        }
-                        $event['custom_data']['content_ids'] = $contentIds;
-                        $event['custom_data']['content_type'] = 'product';
-                        $event['custom_data']['num_items'] = $action['items'] ?? count($contentIds);
-
-                        if (count($action['itemDetails']) === 1) {
-                            $item = $action['itemDetails'][0];
-                            $event['custom_data']['content_name'] = $item['itemName'] ?? '';
-                            if (!empty($item['categories'][0])) {
-                                $event['custom_data']['content_category'] = $item['categories'][0];
-                            }
-                        }
-                    }
-
-                    $events[] = $event;
-
-                    $this->logger->debug('MetaProcessor: Added Purchase event', [
-                        'event_id' => $eventId,
-                        'order_id' => $action['orderId'] ?? 'unknown',
-                        'revenue' => $action['revenue'] ?? 0
-                    ]);
                 }
             }
         }
@@ -416,24 +344,19 @@ class MetaProcessor
         $personalConsent
     ) {
         $userData = [];
-
         // Always include non-personal data
         if ($userAgent && strtolower($userAgent) !== 'unknown') {
             $userData['client_user_agent'] = $userAgent;
         }
-
         if ($externalId && strtolower($externalId) !== 'unknown') {
             $userData['external_id'] = $externalId;
         }
-
         if ($cityHash && strtolower($cityHash) !== 'unknown') {
             $userData['ct'] = $cityHash;
         }
-
         if ($regionHash && strtolower($regionHash) !== 'unknown') {
             $userData['st'] = $regionHash;
         }
-
         if ($countryHash && strtolower($countryHash) !== 'unknown') {
             $userData['country'] = $countryHash;
         }
@@ -443,31 +366,24 @@ class MetaProcessor
             if ($visitorIp && strtolower($visitorIp) !== 'unknown') {
                 $userData['client_ip_address'] = $visitorIp;
             }
-
             if ($emailHash && strtolower($emailHash) !== 'unknown') {
                 $userData['em'] = $emailHash;
             }
-
             if ($phoneHash && strtolower($phoneHash) !== 'unknown') {
                 $userData['ph'] = $phoneHash;
             }
-
             if ($firstNameHash) {
                 $userData['fn'] = $firstNameHash;
             }
-
             if ($lastNameHash) {
                 $userData['ln'] = $lastNameHash;
             }
-
             if ($zipHash && strtolower($zipHash) !== 'unknown') {
                 $userData['zp'] = $zipHash;
             }
-
             if ($fbc && strtolower($fbc) !== 'unknown') {
                 $userData['fbc'] = $fbc;
             }
-
             if ($fbp && strtolower($fbp) !== 'unknown') {
                 $userData['fbp'] = $fbp;
             }
@@ -530,7 +446,7 @@ class MetaProcessor
                 'Content-Type: application/json',
                 'Accept: application/json'
             ],
-            'userAgent' => 'Matomo/ConversionApi Plugin'
+            'userAgent' => 'ReinMengelberg/ConversionApi Matomo Plugin'
         ];
 
         try {
