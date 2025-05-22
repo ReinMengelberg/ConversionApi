@@ -8,20 +8,16 @@
     },
     "authors": [
         {
-            "name": "Matomo",
-            "email": "",
-            "homepage": ""
+            "name": "ReinMengelberg",
+            "email": "rein.mengelberg@gmail.com",
+            "homepage": "https://applyfin.com"
         }
     ],
     "support": {
-        "email": "",
-        "issues": "",
-        "forum": "",
-        "irc": "",
-        "wiki": "",
-        "source": "",
-        "docs": "",
-        "rss": ""
+        "email": "rein.mengelberg@gmail.com",
+        "issues": "https://github.com/ReinMengelberg/ConversionApi/issues",
+        "source": "https://github.com/ReinMengelberg/ConversionApi"
+
     },
     "homepage": "",
     "license": "GPL v3+",
