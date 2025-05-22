@@ -12,6 +12,7 @@ use Piwik\Log\LoggerInterface;
 use Piwik\Http;
 use Piwik\Plugins\ConversionApi\MeasurableSettings;
 use Piwik\Plugins\ConversionApi\Exceptions\MissingConfigurationException;
+use Piwik\Plugins\ConversionApi\Services\Consent\ConsentService;
 
 /**
  * Processes visitor data for Meta Conversion API
@@ -19,15 +20,20 @@ use Piwik\Plugins\ConversionApi\Exceptions\MissingConfigurationException;
 class MetaProcessor
 {
     private $logger;
+    private $consentService;
 
     /**
      * Constructor
      *
      * @param LoggerInterface $logger
      */
-    public function __construct(LoggerInterface $logger)
+    public function __construct(
+        LoggerInterface $logger,
+        ConsentService $consentService
+    )
     {
         $this->logger = $logger;
+        $this->consentService = $consentService;
     }
 
     /**
@@ -45,11 +51,11 @@ class MetaProcessor
             return;
         }
 
-        // Get Meta configuration - using exact property names from ApiSettings
+        // Get Meta configuration - using exact property names from settings class
         $pixelId = $settings->metapixelId->getValue();
         $accessToken = $settings->metaAccessToken->getValue();
-        $testEventCode = $settings->metatestEventCode->getValue(); // Note: using the exact property name from ApiSettings
-        $graphApiVersion = $settings->metaGraphApiVersion->getValue() ?: 'v22.0'; // Default to v22.0 as per settings
+        $testEventCode = $settings->metatestEventCode->getValue();
+        $graphApiVersion = $settings->metaGraphApiVersion->getValue();
 
         if (empty($pixelId) || empty($accessToken)) {
             throw new MissingConfigurationException('Meta', ['Pixel ID', 'Access Token']);
@@ -67,7 +73,6 @@ class MetaProcessor
         foreach ($visits as $visit) {
             try {
                 $metaData = $this->transformVisitForMeta($visit, $settings);
-
                 if ($metaData && !empty($metaData['data'])) {
                     $response = $this->sendDataToMeta(
                         $metaData,
@@ -86,10 +91,6 @@ class MetaProcessor
                             'response' => $response
                         ]);
                     }
-                } else {
-                    $this->logger->info('MetaProcessor: No events to send for visit {idVisit}', [
-                        'idVisit' => $visit['idVisit']
-                    ]);
                 }
             } catch (\Exception $e) {
                 $errorCount++;
@@ -147,10 +148,10 @@ class MetaProcessor
         $_fbp = $visit['_fbp'] ?? null;
 
         // Determine Consent Status
-        $personalConsent = $this->checkPersonalDataConsent($klaroCookie, $settings, $userId);
+        $personalConsent = $this->consentService->checkMetaConsent($klaroCookie, $settings, $userId);
 
         // Create External ID
-        $externalId = $personalConsent ? $visitorId : $this->createRandomId($idVisit);
+        $externalId = $personalConsent ? $visitorId : $this->consentService->createRandomId($idVisit);
 
         // Build User Data Object
         $userData = $this->buildUserDataObject(
@@ -232,80 +233,6 @@ class MetaProcessor
     }
 
     /**
-     * Determine if personal data can be sent based on consent
-     *
-     * @param string|null $klaroCookie Klaro consent cookie value
-     * @param MeasurableSettings $settings Site settings
-     * @param string|null $userId User ID
-     * @return bool Whether personal data consent is given
-     */
-    private function checkPersonalDataConsent($klaroCookie, MeasurableSettings $settings, $userId)
-    {
-        // If userId is set, a privacy statement is accepted so we can assume consent.
-        if ($userId && strtolower($userId) !== 'unknown') {
-            return true;
-        }
-
-        // Get the correct consent service name for Meta from settings
-        $consentSettings = new \Piwik\Plugins\ConversionApi\Settings\ConsentSettings($settings);
-        $consentServices = $consentSettings->getConsentServices();
-        $metaServiceName = $consentServices['meta'] ?? 'conversion-api'; // Default to "conversion-api" if not configured
-
-        // Check consent from Klaro cookie
-        if ($klaroCookie) {
-            try {
-                // Handle JSON format (object format)
-                if (is_string($klaroCookie) && (strpos($klaroCookie, '{') === 0 || strpos($klaroCookie, '[') === 0)) {
-                    $klaroCookie = str_replace('&quot;', '"', $klaroCookie);
-                    $consentData = json_decode($klaroCookie, true);
-
-                    if (is_array($consentData) && isset($consentData[$metaServiceName])) {
-                        $consentGiven = (bool) $consentData[$metaServiceName];
-                        return $consentGiven;
-                    }
-                }
-                // Handle comma-separated format (like "true,analytics:false,marketing:true,socialmedia:false")
-                elseif (is_string($klaroCookie) && strpos($klaroCookie, ',') !== false) {
-                    $parts = explode(',', $klaroCookie);
-                    foreach ($parts as $part) {
-                        if (strpos($part, ':') !== false) {
-                            list($key, $value) = explode(':', $part);
-                            if ($key === $metaServiceName) {
-                                $consentGiven = ($value === 'true');
-                                return $consentGiven;
-                            }
-                        }
-                    }
-                }
-                // Handle array format
-                elseif (is_array($klaroCookie) && isset($klaroCookie[$metaServiceName])) {
-                    $consentGiven = (bool) $klaroCookie[$metaServiceName];
-                    return $consentGiven;
-                }
-            } catch (\Exception $e) {
-                $this->logger->warning('MetaProcessor: Error parsing consent data: {message}', [
-                    'message' => $e->getMessage()
-                ]);
-            }
-        }
-        $this->logger->debug('MetaProcessor: No consent information found, defaulting to no consent');
-        return false;
-    }
-
-    /**
-     * Create a random ID for non-consented users
-     *
-     * @param string $idVisit Visit ID
-     * @return string Random hashed ID
-     */
-    private function createRandomId($idVisit)
-    {
-        $randomPart = mt_rand(100000, 999999);
-        $combinedId = $idVisit . '-' . $randomPart;
-        return hash('sha256', $combinedId);
-    }
-
-    /**
      * Build user data object for Meta API
      *
      * @param string|null $userAgent User agent
@@ -369,12 +296,6 @@ class MetaProcessor
             if ($fbc && strtolower($fbc) !== 'unknown') {$userData['fbc'] = $fbc;}
             if ($fbp && strtolower($fbp) !== 'unknown') {$userData['fbp'] = $fbp;}
         }
-
-        $this->logger->debug('MetaProcessor: Built user data object', [
-            'has_personal_data' => $personalConsent,
-            'fields' => array_keys($userData)
-        ]);
-
         return $userData;
     }
 
@@ -390,91 +311,21 @@ class MetaProcessor
         return (int) $timestamp;
     }
 
-//    /**
-//     * Send data to Meta Conversion API using Matomo's HTTP client
-//     *
-//     * @param array $metaData Transformed event data
-//     * @param string $pixelId Meta Pixel ID
-//     * @param string $accessToken Meta Access Token
-//     * @param string $graphApiVersion Meta Graph API version
-//     * @param string|null $testEventCode Test event code (if any)
-//     * @return array API response
-//     * @throws \Exception If API request fails
-//     */
-//    private function sendDataToMeta($metaData, $pixelId, $accessToken, $graphApiVersion, $testEventCode = null)
-//    {
-//        $apiUrl = "https://graph.facebook.com/{$graphApiVersion}/{$pixelId}/events";
-//
-//        $body = [
-//            'data' => $metaData['data'],
-//            'access_token' => $accessToken
-//        ];
-//
-//        if ($testEventCode && $testEventCode !== 'none') {
-//            $body['test_event_code'] = $testEventCode;
-//        }
-//
-//        $this->logger->debug('MetaProcessor: Sending data to Meta API', [
-//            'url' => $apiUrl,
-//            'event_count' => count($metaData['data']),
-//            'test_mode' => !empty($testEventCode) && $testEventCode !== 'none'
-//        ]);
-//
-//        $requestParams = [
-//            'method' => 'POST',
-//            'timeout' => 30,
-//            'headers' => [
-//                'Content-Type: application/json',
-//                'Accept: application/json'
-//            ],
-//            'userAgent' => 'ReinMengelberg/ConversionApi Matomo Plugin'
-//        ];
-//
-//        try {
-//            // Using Matomo's HTTP client
-//            $response = Http::sendHttpRequest(
-//                $apiUrl,
-//                $requestParams['timeout'],
-//                $requestParams['userAgent'],
-//                $requestParams['headers'],
-//                $requestParams['method'],
-//                json_encode($body)
-//            );
-//
-//            $responseData = json_decode($response, true);
-//
-//            if (empty($responseData)) {
-//                throw new \Exception('Failed to decode response from Meta API: ' . $response);
-//            }
-//
-//            if (isset($responseData['error'])) {
-//                throw new \Exception('Meta API error: ' . ($responseData['error']['message'] ?? 'Unknown error'));
-//            }
-//
-//            return $responseData;
-//        } catch (\Exception $e) {
-//            $this->logger->error('MetaProcessor: HTTP request to Meta API failed: {message}', [
-//                'message' => $e->getMessage()
-//            ]);
-//            throw new \Exception('Failed to send data to Meta API: ' . $e->getMessage());
-//        }
-//    }
-
     /**
-     * Test function that logs what would be sent to Meta Conversion API to a file instead of actually sending it
+     * Send data to Meta Conversion API using Matomo's HTTP client
      *
      * @param array $metaData Transformed event data
      * @param string $pixelId Meta Pixel ID
      * @param string $accessToken Meta Access Token
      * @param string $graphApiVersion Meta Graph API version
      * @param string|null $testEventCode Test event code (if any)
-     * @return array Simulated API response
+     * @return array API response
+     * @throws \Exception If API request fails
      */
-    private function sendDataToMeta($metaData, $pixelId, $accessToken, $graphApiVersion, $testEventCode = null) {
-        // Construct the API URL (same as original function)
+    private function sendDataToMeta($metaData, $pixelId, $accessToken, $graphApiVersion, $testEventCode = null)
+    {
         $apiUrl = "https://graph.facebook.com/{$graphApiVersion}/{$pixelId}/events";
 
-        // Prepare the request body (same as original function)
         $body = [
             'data' => $metaData['data'],
             'access_token' => $accessToken
@@ -484,67 +335,54 @@ class MetaProcessor
             $body['test_event_code'] = $testEventCode;
         }
 
-        // Log debugging information
-        $this->logger->debug('MetaProcessor TEST MODE: Would send data to Meta API', [
-            'url' => $apiUrl,
-            'event_count' => count($metaData['data']),
-            'test_mode' => !empty($testEventCode) && $testEventCode !== 'none'
-        ]);
-
-        // Create a full request payload for logging
-        $requestPayload = [
-            'url' => $apiUrl,
+        $requestParams = [
             'method' => 'POST',
+            'timeout' => 30,
             'headers' => [
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-                'User-Agent' => 'ReinMengelberg/ConversionApi Matomo Plugin'
+                'Content-Type: application/json',
+                'Accept: application/json'
             ],
-            'body' => $body,
-            'timestamp' => date('Y-m-d H:i:s')
+            'userAgent' => 'ReinMengelberg/ConversionApi Matomo Plugin'
         ];
 
-        // Hardcoded output file path
-        $outputFile = PIWIK_DOCUMENT_ROOT . '/plugins/ConversionApi/tmp/meta_conversion_test.json';
+        try {
+            // Using Matomo's HTTP client
+            $response = Http::sendHttpRequestBy(
+                'curl',
+                $apiUrl,
+                $requestParams['timeout'],
+                $requestParams['userAgent'],
+                null,
+                null,
+                0,
+                false,
+                false,
+                false,
+                false,
+                $requestParams['method'],
+                null,
+                null,
+                json_encode($body),
+                $requestParams['headers']
+            );
 
-        // Sanitize data to ensure proper encoding
-        $sanitizedPayload = $this->sanitizeForJson($requestPayload);
 
-        // Write to file
-        $jsonContent = json_encode($sanitizedPayload, JSON_PRETTY_PRINT);
-        file_put_contents($outputFile, $jsonContent);
+            $responseData = json_decode($response, true);
 
-        $this->logger->info('MetaProcessor: TEST MODE - Request data written to ' . $outputFile);
-
-        // Return a simulated successful response
-        return [
-            'events_received' => count($metaData['data']),
-            'fbtrace_id' => 'test_' . uniqid(),
-            'test_mode' => true,
-            'log_file' => $outputFile
-        ];
-    }
-
-    /**
-     * Helper function to sanitize data for JSON encoding
-     *
-     * @param mixed $data Data to sanitize
-     * @return mixed Sanitized data
-     */
-    private function sanitizeForJson($data) {
-        if (is_string($data)) {
-            return mb_convert_encoding($data, 'UTF-8', 'UTF-8');
-        }
-
-        if (is_array($data)) {
-            $result = [];
-            foreach ($data as $key => $value) {
-                $sanitizedKey = is_string($key) ? mb_convert_encoding($key, 'UTF-8', 'UTF-8') : $key;
-                $result[$sanitizedKey] = $this->sanitizeForJson($value);
+            if (empty($responseData)) {
+                throw new \Exception('Failed to decode response from Meta API: ' . $response);
             }
-            return $result;
-        }
 
-        return $data;
+            if (isset($responseData['error'])) {
+                throw new \Exception('Meta API error: ' . ($responseData['error']['message'] ?? 'Unknown error'));
+            }
+
+            return $responseData;
+        } catch (\Exception $e) {
+            $this->logger->error('MetaProcessor: HTTP request to Meta API failed: {message}', [
+                'message' => $e->getMessage()
+            ]);
+            throw new \Exception('Failed to send data to Meta API: ' . $e->getMessage());
+        }
     }
 }

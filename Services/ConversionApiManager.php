@@ -130,10 +130,7 @@ class ConversionApiManager
         $expandedVisits = $this->visitExpandService->expandVisits($visits, $settings);
         $formattedVisits = $this->visitFormatService->formatVisits($expandedVisits, $settings);
         $hashedVisits = $this->visitHashService->hashVisits($formattedVisits, $settings);
-
-
-        $this->logger->info('ConversionApi: DEBUG - Expanded, Formatted and Hashed visits:');;
-        $this->logVisit($hashedVisits[$loggedVisitIndex], '/plugins/ConversionApi/tmp/visit_debug_hashed.json');
+        $this->logger->info('ConversionApi: Expanded, formatted and hashed {count} visits for site {idSite}', ['count' => count($hashedVisits), 'idSite' => $idSite]);
 
         // Process Meta if enabled
         try {
@@ -319,29 +316,5 @@ class ConversionApiManager
             throw new MissingConfigurationException('LinkedIn', $missingFields);
         }
         return true;
-    }
-
-    private function logVisit(array $visit, string $outputFileName = null) {
-        if (isset($visit)) {
-            $sanitize = function($data) use (&$sanitize) {
-                if (is_string($data)) {
-                    return mb_convert_encoding($data, 'UTF-8', 'UTF-8');
-                }
-                if (is_array($data)) {
-                    $result = [];
-                    foreach ($data as $key => $value) {
-                        $sanitizedKey = is_string($key) ? mb_convert_encoding($key, 'UTF-8', 'UTF-8') : $key;
-                        $result[$sanitizedKey] = $sanitize($value);
-                    }
-                    return $result;
-                }
-                return $data;
-            };
-            $sanitizedVisit = $sanitize($visit);
-            $jsonContent = json_encode($sanitizedVisit, JSON_PRETTY_PRINT);
-            $debugFile = PIWIK_DOCUMENT_ROOT . $outputFileName;
-            file_put_contents($debugFile, $jsonContent);
-            $this->logger->info('ConversionApi: DEBUG - Visit structure written to ' . $debugFile);
-        }
     }
 }
