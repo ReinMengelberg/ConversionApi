@@ -19,7 +19,8 @@
         "source": "https://github.com/ReinMengelberg/ConversionApi"
 
     },
+    "category": "integration",
     "homepage": "",
     "license": "GPL v3+",
-    "keywords": []
+    "keywords": ["conversion api", "meta", "google", "linkedin", "marketing", "ads"]
 }
