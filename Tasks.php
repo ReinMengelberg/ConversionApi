@@ -67,11 +67,7 @@ class Tasks extends \Piwik\Plugin\Tasks
 
         try {
             $this->logger->info('ConversionApi: Starting scheduled job');
-
-            // Get all active sites
             $sites = Site::getSites();
-
-            // Get time period for the hour before the last.
             $now = Date::now();
             $oneHourAgo = $now->subHour(1);
             $hourString = $oneHourAgo->toString('H');

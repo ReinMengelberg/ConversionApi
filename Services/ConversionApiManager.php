@@ -104,25 +104,10 @@ class ConversionApiManager
             return;
         }
 
-        // Logging function
-        $loggedVisitIndex = 1;
-
         // Get visits
-//        $visits = $this->visitDataService->getVisits($idSite, $startDate, $endDate);
-//        if (empty($visits)) {
-//            $this->logger->info('ConversionApi: No visit data found for site {idSite} in the specified period', ['idSite' => $idSite]);
-//            return;
-//        }
-
-        // Predefined Visits
-        $visitsFile = PIWIK_DOCUMENT_ROOT . '/plugins/ConversionApi/tmp/visits.json';
-        if (!file_exists($visitsFile)) {
-            $this->logger->error('ConversionApi: Visits file not found at: ' . $visitsFile);
-            return;
-        }
-        $visits = json_decode(file_get_contents($visitsFile), true);
+        $visits = $this->visitDataService->getVisits($idSite, $startDate, $endDate);
         if (empty($visits)) {
-            $this->logger->info('ConversionApi: No visit data found in visits.json for site {idSite}', ['idSite' => $idSite]);
+            $this->logger->info('ConversionApi: No visit data found for site {idSite} in the specified period', ['idSite' => $idSite]);
             return;
         }
 
