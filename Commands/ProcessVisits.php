@@ -2,24 +2,23 @@
 /**
  * Matomo - free/libre analytics platform
  *
- * @link https://matomo.org
- * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
+ * @link    https://matomo.org
+ * @license https://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
  */
 
-namespace Piwik\Plugins\ConversionApi;
+namespace Piwik\Plugins\ConversionApi\Commands;
 
+use Piwik\Plugin\ConsoleCommand;
 use Piwik\Site;
 use Piwik\Date;
 use Piwik\Log\LoggerInterface;
 use Piwik\Plugins\ConversionApi\Services\ConversionApiManager;
-use Piwik\Scheduler\RetryableException;
-use Piwik\Common;
-use Piwik\Option;
+use Piwik\Container\StaticContainer;
 
 /**
- * Scheduled tasks for ConversionApi plugin.
+ * Console command to process conversion data - same logic as the scheduled task
  */
-class Tasks extends \Piwik\Plugin\Tasks
+class ProcessVisits extends ConsoleCommand
 {
     /**
      * @var ConversionApiManager
@@ -37,37 +36,36 @@ class Tasks extends \Piwik\Plugin\Tasks
     const MAX_EXECUTION_TIME = 600;
 
     /**
-     * Constructor.
-     *
-     * @param ConversionApiManager $conversionApiManager
-     * @param LoggerInterface $logger
+     * Constructor
      */
-    public function __construct(ConversionApiManager $conversionApiManager, LoggerInterface $logger)
+    public function __construct(ConversionApiManager $conversionApiManager = null, LoggerInterface $logger = null)
     {
-        $this->conversionApiManager = $conversionApiManager;
-        $this->logger = $logger;
+        parent::__construct();
+
+        $this->conversionApiManager = $conversionApiManager ?: StaticContainer::get('Piwik\Plugins\ConversionApi\Services\ConversionApiManager');
+        $this->logger = $logger ?: StaticContainer::get('Psr\Log\LoggerInterface');
     }
 
     /**
-     * Schedule tasks for this plugin.
+     * Configure the command
      */
-    public function schedule()
+    protected function configure()
     {
-        // Process conversion data hourly
-        $this->hourly('processVisitData', null, self::HIGH_PRIORITY, 60);
+        $this->setName('conversionapi:process-visits');
+        $this->setDescription('Process conversion data for all sites (same as scheduled task)');
     }
 
     /**
-     * Process conversion data for all sites
+     * Execute the command - exact same logic as your scheduled task
      */
-    public function processVisitData()
+    protected function doExecute(): int
     {
         // Set a timeout to prevent indefinite hanging
         $startTime = time();
 
         try {
             $this->logger->info('ConversionApi: Starting scheduled job');
-            $sites = Site::getSites();
+            $sites = \Piwik\API\Request::processRequest('SitesManager.getAllSites');
             $now = Date::now();
             $oneHourAgo = $now->subHour(1);
             $hourString = $oneHourAgo->toString('H');
@@ -85,7 +83,6 @@ class Tasks extends \Piwik\Plugin\Tasks
 
             // Process each site synchronously to preserve resources
             foreach ($sites as $site) {
-                // Check for timeout to avoid indefinite hanging
                 if ((time() - $startTime) > self::MAX_EXECUTION_TIME) {
                     $this->logger->warning('ConversionApi: Execution time limit reached, stopping processing');
                     break;
@@ -130,20 +127,21 @@ class Tasks extends \Piwik\Plugin\Tasks
                     }
                 }
             }
+
             $this->logger->info('ConversionApi: Completed scheduled job');
+
             if (!empty($shouldRetry)) {
-                throw new RetryableException("Rate limit or connection issues encountered during processing. Task will be retried.");
+                $this->logger->warning('ConversionApi: Rate limit or connection issues encountered');
+                return self::FAILURE;
             }
 
-        } catch (RetryableException $e) {
-            $this->logger->warning('ConversionApi: Task marked for retry: {message}', [
-                'message' => $e->getMessage()
-            ]);
-            throw $e;
+            return self::SUCCESS;
+
         } catch (\Exception $e) {
             $this->logger->error('ConversionApi: Unexpected error during task execution: {message}', [
                 'message' => $e->getMessage()
             ]);
+            return self::FAILURE;
         }
     }
 }

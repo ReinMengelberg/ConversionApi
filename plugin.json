@@ -10,17 +10,23 @@
         {
             "name": "ReinMengelberg",
             "email": "rein.mengelberg@gmail.com",
-            "homepage": "https://applyfin.com"
+            "homepage": "https:\/\/applyfin.com"
         }
     ],
     "support": {
         "email": "rein.mengelberg@gmail.com",
-        "issues": "https://github.com/ReinMengelberg/ConversionApi/issues",
-        "source": "https://github.com/ReinMengelberg/ConversionApi"
-
+        "issues": "https:\/\/github.com\/ReinMengelberg\/ConversionApi\/issues",
+        "source": "https:\/\/github.com\/ReinMengelberg\/ConversionApi"
     },
     "category": "integration",
     "homepage": "",
     "license": "GPL v3+",
-    "keywords": ["conversion api", "meta", "google", "linkedin", "marketing", "ads"]
+    "keywords": [
+        "conversion api",
+        "meta",
+        "google",
+        "linkedin",
+        "marketing",
+        "ads"
+    ]
 }
