@@ -9,7 +9,7 @@ ConversionApi is a powerful Matomo plugin designed to enhance your analytics cap
 ## Features
 
 - **Multi-Platform API Integration**: Seamlessly integrate with major conversion APIs including Meta, Google Ads, and LinkedIn.
-- **Scheduled Task**: Scheduled task for integrating the visits each hour.
+- **Command**: Command you can add to a cron job to send the visits each hour.
 - **Custom Dimensions Mapping**: Map predefined variables to visit-scope and action-scope custom dimensions with intelligent data formatting
 - **Event Mapping & Tracking**: Map Matomo event categories to platform-specific event names with eventId synchronization for deduplication
 - **Consent Management Integration**: Built-in Klaro.js integration for GDPR-compliant conditional API sending based on user consent
@@ -136,6 +136,18 @@ The plugin includes out-of-the-box integration with Klaro.js due to its open-sou
     - Boolean values from the Klaro cookie determine platform activation
 5. Save your configuration
 
+### 5. Enabling the plugin
+
+To enable the plugin, you should set up a cron job similar to the Archive Reports cron job (https://matomo.org/faq/on-premise/how-to-set-up-auto-archiving-of-your-reports/).
+
+Add a cron job like this:
+```
+10 * * * * www-data /usr/bin/php /path/to/matomo/console conversionapi:process-visits
+```
+
+This cron job will run on the tenth minute of every hour and send all of the visits collected in the hour before last.
+So if it runs at 18:10, it will integrate visits from 16:00–17:00. This way we ensure we only send completed visits.
+
 ### Example Configuration
 
 **Dimensions Configuration:**
@@ -201,7 +213,6 @@ ConversionApi/
 ├── Controller.php                             # Admin interface controller
 ├── MeasurableSettings.php                     # Site-specific settings
 ├── Menu.php                                   # Admin menu integration
-├── Tasks.php                                  # Scheduled tasks
 ├── README.md                                  # Documentation
 ├── Exceptions/
 │   └── MissingConfigurationException.php      # Custom exception
@@ -218,6 +229,8 @@ ConversionApi/
 │       ├── VisitExpandService.php             # Service for expanding visit data
 │       ├── VisitFormatService.php             # Service for formatting visit data
 │       └── VisitHashService.php               # Service for hashing visitor data
+├── Commands/
+│   └── ProcessVisits.php                      # Command to process visits
 ├── Settings/
 │   └── EventSettings.php                      # Settings for event mapping
 ├── templates/                                 # Twig templates

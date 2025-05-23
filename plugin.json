@@ -1,7 +1,7 @@
 {
     "name": "ConversionApi",
     "description": "The Conversion Api plugin allows users to ingtegrate their data directly with Marketing platforms, like Meta, LinkedIn and Google",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "theme": false,
     "require": {
         "matomo": ">=5.2.0,<6.0.0-b1"
@@ -10,17 +10,23 @@
         {
             "name": "ReinMengelberg",
             "email": "rein.mengelberg@gmail.com",
-            "homepage": "https://applyfin.com"
+            "homepage": "https:\/\/applyfin.com"
         }
     ],
     "support": {
         "email": "rein.mengelberg@gmail.com",
-        "issues": "https://github.com/ReinMengelberg/ConversionApi/issues",
-        "source": "https://github.com/ReinMengelberg/ConversionApi"
-
+        "issues": "https:\/\/github.com\/ReinMengelberg\/ConversionApi\/issues",
+        "source": "https:\/\/github.com\/ReinMengelberg\/ConversionApi"
     },
     "category": "integration",
     "homepage": "",
     "license": "GPL v3+",
-    "keywords": ["conversion api", "meta", "google", "linkedin", "marketing", "ads"]
+    "keywords": [
+        "conversion api",
+        "meta",
+        "google",
+        "linkedin",
+        "marketing",
+        "ads"
+    ]
 }
