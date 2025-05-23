@@ -53,7 +53,7 @@ class ConsentSettings
      */
     private function makeKlaroCookieDimensionSetting()
     {
-        return $this->settings->makeSetting(
+        return $this->settings->createSetting(
             'klaro_cookie_dimension',
             '', // Default empty value
             FieldConfig::TYPE_INT,
@@ -82,7 +82,7 @@ class ConsentSettings
         $title = $this->getPlatformTitle($platform);
         $description = "Klaro consent service name for $title";
 
-        return $this->settings->makeSetting(
+        return $this->settings->createSetting(
             'consent_service_' . $platform,
             '', // Default empty value
             FieldConfig::TYPE_STRING,

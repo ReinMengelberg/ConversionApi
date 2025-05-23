@@ -101,6 +101,22 @@ class MeasurableSettings extends \Piwik\Settings\Measurable\MeasurableSettings
     }
 
     /**
+     * Public wrapper around the protected makeSetting method
+     * Allows settings classes to create settings
+     *
+     * @param string $name
+     * @param mixed $defaultValue
+     * @param string $type
+     * @param callable $configureCallback
+     * @return Setting
+     */
+    public function createSetting($name, $defaultValue, $type, $configureCallback)
+    {
+        return $this->makeSetting($name, $defaultValue, $type, $configureCallback);
+    }
+
+
+    /**
      * Get all dimension mappings in a format ready for tracking
      *
      * @return array

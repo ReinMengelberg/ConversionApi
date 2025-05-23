@@ -80,7 +80,7 @@ class EventSettings
         $title = $this->getEventTypeTitle($eventType);
         $description = $this->getEventTypeDescription($eventType);
 
-        return $this->settings->makeSetting(
+        return $this->settings->createSetting(
             'event_category_' . $eventType,
             $eventType, // Default value is the same as the key
             FieldConfig::TYPE_STRING,
@@ -136,7 +136,7 @@ class EventSettings
      */
     private function makeEventIdSourceSetting()
     {
-        return $this->settings->makeSetting(
+        return $this->settings->createSetting(
             'event_id_source',
             'event_name', // Default: use event name
             FieldConfig::TYPE_STRING,
@@ -160,7 +160,7 @@ class EventSettings
      */
     private function makeEventIdCustomDimensionSetting()
     {
-        return $this->settings->makeSetting(
+        return $this->settings->createSetting(
             'event_id_custom_dimension',
             '',
             FieldConfig::TYPE_INT,

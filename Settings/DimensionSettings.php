@@ -81,7 +81,7 @@ class DimensionSettings
         $title = $this->getVariableTitle($variable);
         $description = $this->getVariableDescription($variable);
 
-        return $this->settings->makeSetting(
+        return $this->settings->createSetting(
             'visit_dim_' . $variable,
             '',
             FieldConfig::TYPE_INT,
@@ -110,7 +110,7 @@ class DimensionSettings
         $title = $this->getVariableTitle($variable);
         $description = $this->getVariableDescription($variable);
 
-        return $this->settings->makeSetting(
+        return $this->settings->createSetting(
             'action_dim_' . $variable,
             '',
             FieldConfig::TYPE_INT,
@@ -141,7 +141,7 @@ class DimensionSettings
 
         // For phone country code, we use integer type for the dialing code
         if ($variable === 'phoneValueCountryCode') {
-            return $this->settings->makeSetting(
+            return $this->settings->createSetting(
                 'transform_' . $variable,
                 31, // Default to 31 (Netherlands)
                 FieldConfig::TYPE_INT,
@@ -160,7 +160,7 @@ class DimensionSettings
         }
 
         // Generic case for other transformation settings
-        return $this->settings->makeSetting(
+        return $this->settings->createSetting(
             'transform_' . $variable,
             '',
             FieldConfig::TYPE_STRING,

@@ -52,7 +52,7 @@ class ApiSettings
     // Meta settings
     private function makeMetaPixelIdSetting()
     {
-        return $this->settings->makeSetting('meta_pixel_id', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
+        return $this->settings->createSetting('meta_pixel_id', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
             $field->title = 'Meta Pixel ID';
             $field->description = 'Your Meta (Facebook) Pixel ID for this website';
             $field->inlineHelp = 'Found in Meta Business Manager under Data Sources > Pixels';
@@ -67,7 +67,7 @@ class ApiSettings
 
     private function makeMetaAccessTokenSetting()
     {
-        return $this->settings->makeSetting('meta_access_token', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
+        return $this->settings->createSetting('meta_access_token', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
             $field->title = 'Access Token';
             $field->description = 'Your Meta (Facebook) API Access Token for this website';
             $field->inlineHelp = 'Generate a token with ads_management permission in Meta Business Manager';
@@ -77,7 +77,7 @@ class ApiSettings
 
     private function makeMetaTestEventCodeSetting()
     {
-        return $this->settings->makeSetting('meta_test_event_code', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
+        return $this->settings->createSetting('meta_test_event_code', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
             $field->title = 'Test Event Code';
             $field->description = 'Optional: Test Event Code for Meta Test Events';
             $field->inlineHelp = 'Use this during testing to verify events in Meta Events Manager';
@@ -87,7 +87,7 @@ class ApiSettings
 
     private function makeMetaGraphApiVersionSetting()
     {
-        return $this->settings->makeSetting('meta_graph_api_version', 'v22.0', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
+        return $this->settings->createSetting('meta_graph_api_version', 'v22.0', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
             $field->title = 'Graph API Version';
             $field->description = 'Meta Graph API Version';
             $field->inlineHelp = 'The version of Meta\'s Graph API to use (default: v22.0)';
@@ -97,7 +97,7 @@ class ApiSettings
 
     private function makeMetaSyncVisitsSetting()
     {
-        return $this->settings->makeSetting('meta_sync_visits', false, FieldConfig::TYPE_BOOL, function (FieldConfig $field) {
+        return $this->settings->createSetting('meta_sync_visits', false, FieldConfig::TYPE_BOOL, function (FieldConfig $field) {
             $field->title = 'Sync Visits to Meta';
             $field->description = 'Automatically sync visit data to Meta Conversion API';
             $field->uiControl = FieldConfig::UI_CONTROL_CHECKBOX;
@@ -107,7 +107,7 @@ class ApiSettings
     // Google Settings
     private function makeGoogleAdsDeveloperTokenSetting()
     {
-        return $this->settings->makeSetting('google_ads_developer_token', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
+        return $this->settings->createSetting('google_ads_developer_token', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
             $field->title = 'Developer Token';
             $field->description = 'Your Google Ads API Developer Token';
             $field->inlineHelp = 'Required for making API calls to Google Ads';
@@ -117,7 +117,7 @@ class ApiSettings
 
     private function makeGoogleAdsClientIdSetting()
     {
-        return $this->settings->makeSetting('google_ads_client_id', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
+        return $this->settings->createSetting('google_ads_client_id', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
             $field->title = 'OAuth Client ID';
             $field->description = 'Your Google OAuth Client ID';
             $field->inlineHelp = 'Created in the Google Cloud Console';
@@ -127,7 +127,7 @@ class ApiSettings
 
     private function makeGoogleAdsClientSecretSetting()
     {
-        return $this->settings->makeSetting('google_ads_client_secret', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
+        return $this->settings->createSetting('google_ads_client_secret', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
             $field->title = 'OAuth Client Secret';
             $field->description = 'Your Google OAuth Client Secret';
             $field->inlineHelp = 'Created in the Google Cloud Console';
@@ -137,7 +137,7 @@ class ApiSettings
 
     private function makeGoogleAdsRefreshTokenSetting()
     {
-        return $this->settings->makeSetting('google_ads_refresh_token', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
+        return $this->settings->createSetting('google_ads_refresh_token', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
             $field->title = 'Refresh Token';
             $field->description = 'Your Google OAuth Refresh Token';
             $field->inlineHelp = 'Generated during the OAuth authentication process';
@@ -147,7 +147,7 @@ class ApiSettings
 
     private function makeGoogleAdsLoginCustomerIdSetting()
     {
-        return $this->settings->makeSetting('google_ads_login_customer_id', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
+        return $this->settings->createSetting('google_ads_login_customer_id', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
             $field->title = 'Login Customer ID';
             $field->description = 'Your Google Ads Manager Account ID (without dashes)';
             $field->inlineHelp = 'Required if using a manager account for authentication';
@@ -162,7 +162,7 @@ class ApiSettings
 
     private function makeGoogleAdsApiVersionSetting()
     {
-        return $this->settings->makeSetting('google_ads_api_version', 'v19', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
+        return $this->settings->createSetting('google_ads_api_version', 'v19', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
             $field->title = 'API Version';
             $field->description = 'Google Ads API Version';
             $field->inlineHelp = 'The version of Google Ads API to use (default: v19)';
@@ -172,7 +172,7 @@ class ApiSettings
 
     private function makeGoogleSyncVisitsSetting()
     {
-        return $this->settings->makeSetting('google_sync_visits', false, FieldConfig::TYPE_BOOL, function (FieldConfig $field) {
+        return $this->settings->createSetting('google_sync_visits', false, FieldConfig::TYPE_BOOL, function (FieldConfig $field) {
             $field->title = 'Sync Visits to Google';
             $field->description = 'Automatically sync visit data to Google Ads API';
             $field->uiControl = FieldConfig::UI_CONTROL_CHECKBOX;
@@ -182,7 +182,7 @@ class ApiSettings
     // LinkedIn Settings
     private function makeLinkedinAccessTokenSetting()
     {
-        return $this->settings->makeSetting('linkedin_access_token', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
+        return $this->settings->createSetting('linkedin_access_token', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
             $field->title = 'Access Token';
             $field->description = 'Your LinkedIn API Access Token';
             $field->inlineHelp = 'Generate a token with the required permissions in LinkedIn Developer Portal';
@@ -192,7 +192,7 @@ class ApiSettings
 
     private function makeLinkedinAdAccountUrnSetting()
     {
-        return $this->settings->makeSetting('linkedin_ad_account_id', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
+        return $this->settings->createSetting('linkedin_ad_account_id', '', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
             $field->title = 'Ad Account ID';
             $field->description = 'Your LinkedIn Ad Account ID';
             $field->inlineHelp = 'Format: urn:li:sponsoredAccount:123456789';
@@ -202,7 +202,7 @@ class ApiSettings
 
     private function makeLinkedinApiVersionSetting()
     {
-        return $this->settings->makeSetting('linkedin_api_version', '202404', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
+        return $this->settings->createSetting('linkedin_api_version', '202404', FieldConfig::TYPE_STRING, function (FieldConfig $field) {
             $field->title = 'API Version';
             $field->description = 'LinkedIn API Version';
             $field->inlineHelp = 'The version of LinkedIn API to use (default: 202404)';
@@ -212,7 +212,7 @@ class ApiSettings
 
     private function makeLinkedinSyncVisitsSetting()
     {
-        return $this->settings->makeSetting('linkedin_sync_visits', false, FieldConfig::TYPE_BOOL, function (FieldConfig $field) {
+        return $this->settings->createSetting('linkedin_sync_visits', false, FieldConfig::TYPE_BOOL, function (FieldConfig $field) {
             $field->title = 'Sync Visits to LinkedIn';
             $field->description = 'Automatically sync visit data to LinkedIn Conversions API';
             $field->uiControl = FieldConfig::UI_CONTROL_CHECKBOX;
