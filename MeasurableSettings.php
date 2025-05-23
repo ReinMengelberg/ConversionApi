@@ -14,74 +14,62 @@ use Piwik\Plugins\ConversionApi\Settings\EventSettings;
  */
 class MeasurableSettings extends \Piwik\Settings\Measurable\MeasurableSettings
 {
-    // API related settings for Meta
-    /** @var Setting */
+    /**
+     * ApiSettings (LinkedIn)
+     */
     public $metapixelId;
-    /** @var Setting */
     public $metaAccessToken;
-    /** @var Setting */
     public $metatestEventCode;
-    /** @var Setting */
     public $metaGraphApiVersion;
-    /** @var Setting */
     public $metaSyncVisits;
 
-    // API related settings for Google Ads
-    /** @var Setting */
+    /**
+     * ApiSettings (Google)
+     */
     public $googleAdsDeveloperToken;
-    /** @var Setting */
     public $googleAdsClientId;
-    /** @var Setting */
     public $googleAdsClientSecret;
-    /** @var Setting */
     public $googleAdsRefreshToken;
-    /** @var Setting */
     public $googleAdsLoginCustomerId;
-    /** @var Setting */
     public $googleAdsApiVersion;
-    /** @var Setting */
     public $googleSyncVisits;
-
-    // API related settings for LinkedIn
-    /** @var Setting */
+    
+    /**
+     * ApiSettings (LinkedIn)
+     */
     public $linkedinAccessToken;
-    /** @var Setting */
     public $linkedinAdAccountUrn;
-    /** @var Setting */
     public $linkedinApiVersion;
-    /** @var Setting */
     public $linkedinSyncVisits;
 
-    // Dimension related settings
-    /** @var array of Setting objects */
+    /**
+     * DimensionSettings
+     */
     public $visitDimensions = [];
-    /** @var array of Setting objects */
     public $actionDimensions = [];
+    public $transformations = [];
 
-    // Event related settings
-    /** @var Setting Setting for event ID source */
+    /**
+     * EventSettings
+     */
     public $eventIdSource;
-    /** @var Setting Setting for event ID custom dimension*/
     public $eventIdCustomDimension;
-    /** @var array of Setting objects */
     public $eventCategories = [];
 
-    // Consent related settings
-    /** @var Setting Setting for Klaro cookie dimension index */
+    /**
+     * ConsentSettings
+     */
     public $klaroCookieDimension;
-    /** @var array of Setting objects */
     public $consentServices = [];
 
-    // Settings manager instances
-    /** @var ApiSettings */
+    /**
+     * Manager Instances
+     */
     private $apiSettings;
-    /** @var DimensionSettings */
     private $dimensionSettings;
-    /** @var ConsentSettings */
     private $consentSettings;
-    /** @var EventSettings */
     private $eventSettings;
-
+    
     /**
      * Initialize all settings
      */
