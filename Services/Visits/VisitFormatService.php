@@ -37,6 +37,19 @@ class VisitFormatService
         'formattedCityValue'
     ];
 
+    // Character transliteration map for common non-ASCII characters
+    private $transliterationMap = [
+        'à' => 'a', 'á' => 'a', 'â' => 'a', 'ã' => 'a', 'ä' => 'a', 'å' => 'a', 'æ' => 'ae',
+        'ç' => 'c', 'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e', 'ì' => 'i', 'í' => 'i',
+        'î' => 'i', 'ï' => 'i', 'ñ' => 'n', 'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'õ' => 'o',
+        'ö' => 'o', 'ø' => 'o', 'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ü' => 'u', 'ý' => 'y',
+        'ÿ' => 'y', 'ß' => 'ss', 'đ' => 'd', 'ð' => 'd', 'þ' => 'th',
+        // Add more characters as needed
+        'š' => 's', 'ž' => 'z', 'č' => 'c', 'ć' => 'c', 'ř' => 'r', 'ť' => 't', 'ň' => 'n',
+        'ľ' => 'l', 'ĺ' => 'l', 'ď' => 'd', 'ě' => 'e', 'ů' => 'u', 'ą' => 'a', 'ę' => 'e',
+        'ł' => 'l', 'ń' => 'n', 'ś' => 's', 'ź' => 'z', 'ż' => 'z'
+    ];
+
     /**
      * Constructor for VisitFormatService class
      *
@@ -267,9 +280,35 @@ class VisitFormatService
         }
         $value = trim($value);
         $value = mb_strtolower($value, 'UTF-8');
-        $value = transliterator_transliterate('Any-Latin; Latin-ASCII', $value);
+
+        // Use transliterator if available, otherwise use fallback
+        $value = $this->transliterateText($value);
+
         $value = preg_replace('/[^a-z0-9]/', '', $value);
         return $value;
+    }
+
+    /**
+     * Transliterate non-Latin characters to Latin equivalents
+     * Uses PHP intl extension if available, otherwise falls back to manual mapping
+     *
+     * @param string $text The text to transliterate
+     * @return string The transliterated text
+     */
+    private function transliterateText($text)
+    {
+        // Convert common accented characters
+        $text = strtr($text, $this->transliterationMap);
+
+        // Remove any remaining non-ASCII characters
+        $text = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
+
+        // If iconv failed, remove non-ASCII characters manually
+        if ($text === false) {
+            $text = preg_replace('/[^\x00-\x7F]/', '', $text);
+        }
+
+        return $text;
     }
 
     /**

@@ -1,7 +1,7 @@
 {
     "name": "ConversionApi",
     "description": "The Conversion Api plugin allows users to ingtegrate their data directly with Marketing platforms, like Meta, LinkedIn and Google",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "theme": false,
     "require": {
         "matomo": ">=5.2.0,<6.0.0-b1"
