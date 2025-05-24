@@ -126,7 +126,6 @@ class MetaProcessor
         $events = [];
 
         // User Data Initialization
-        $userData = [];
         $userId = $visit['userId'] ?? null;
         $visitorId = $visit['visitorId'] ?? null;
         $visitorIp = $visit['visitIp'] ?? null;
@@ -218,7 +217,7 @@ class MetaProcessor
                         $events[] = $event;
 
                     } else {
-                        $this->logger->warning('MetaProcessor: No Meta event mapping found for category {category}', [
+                        $this->logger->info('MetaProcessor: No Meta event mapping found for category {category}, skipping event', [
                             'category' => $eventCategory
                         ]);
                     }
