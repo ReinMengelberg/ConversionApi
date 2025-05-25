@@ -218,7 +218,7 @@ class MetaProcessor
                         $events[] = $event;
 
                     } else {
-                        $this->logger->warning('MetaProcessor: No Meta event mapping found for category {category}', [
+                        $this->logger->info('MetaProcessor: No Meta event mapping found for category {category}', [
                             'category' => $eventCategory
                         ]);
                     }
@@ -374,7 +374,23 @@ class MetaProcessor
             }
 
             if (isset($responseData['error'])) {
-                throw new \Exception('Meta API error: ' . ($responseData['error']['message'] ?? 'Unknown error'));
+                $errorMessage = $responseData['error']['message'] ?? 'Unknown error';
+                $errorCode = isset($responseData['error']['code']) ? " (Code: {$responseData['error']['code']})" : '';
+                $errorType = isset($responseData['error']['type']) ? " [{$responseData['error']['type']}]" : '';
+
+                // Format the user-friendly parts of the error message
+                $errorDetails = '';
+                if (isset($responseData['error']['error_user_title'])) {
+                    $errorDetails .= "\n- Issue: " . $responseData['error']['error_user_title'];
+                }
+                if (isset($responseData['error']['error_user_msg'])) {
+                    $errorDetails .= "\n- Details: " . $responseData['error']['error_user_msg'];
+                }
+                if (isset($responseData['error']['fbtrace_id'])) {
+                    $errorDetails .= "\n- Trace ID: " . $responseData['error']['fbtrace_id'];
+                }
+
+                throw new \Exception("Meta API Error{$errorType}{$errorCode}: {$errorMessage}{$errorDetails}");
             }
 
             return $responseData;
