@@ -90,12 +90,13 @@ class ConversionApiManager
      * Process all enabled APIs for a site
      *
      * @param int $idSite
+     * @param string $timezone
      * @param Date $startDate
      * @param Date $endDate
      * @throws MissingConfigurationException
      * @throws \Exception
      */
-    public function processData($idSite, $startDate, $endDate)
+    public function processData(int $idSite, string $timezone, Date $startDate, Date $endDate)
     {
         $settings = new MeasurableSettings($idSite);
 
@@ -120,7 +121,7 @@ class ConversionApiManager
         // Process Meta if enabled
         try {
             if ($settings->metaSyncVisits->getValue() && $this->isMetaEnabled($settings)) {
-                $this->processMetaVisits($idSite, $hashedVisits, $settings);
+                $this->processMetaVisits($hashedVisits, $idSite, $timezone, $settings);
             }
         } catch (MissingConfigurationException $e) {
             $this->logger->warning('ConversionApi: {message} for site {idSite}. Skipping Meta integration.', [
@@ -172,55 +173,56 @@ class ConversionApiManager
     /**
      * Process and send visits to Meta Conversion API
      *
-     * @param int $idSite
      * @param array $hashedData
+     * @param int $idSite
+     * @param string $timezone
      * @param MeasurableSettings $settings
      */
-    private function processMetaVisits($idSite, $hashedData, $settings)
+    private function processMetaVisits(array $hashedData, int $idSite, string $timezone, MeasurableSettings $settings)
     {
         try {
             $this->logger->info('ConversionApi: Sending visits to Meta Conversion API for site {idSite}', ['idSite' => $idSite]);
-            $this->metaProcessor->processVisits($idSite, $hashedData, $settings);
+            $this->metaProcessor->processVisits($hashedData, $idSite, $timezone, $settings);
         } catch (\Exception $e) {
             $this->logger->error('ConversionApi: Error sending visits to Meta Conversion API: {message}', ['message' => $e->getMessage()]);
             throw $e;
         }
     }
 
-    /**
-     * Process and send visits to Google Ads API
-     * @param int $idSite
-     * @param array $hashedData
-     * @param MeasurableSettings $settings
-     */
-    private function processGoogleVisits($idSite, $hashedData, $settings)
-    {
-        try {
-            $this->logger->info('ConversionApi: Sending visits to Google Ads API for site {idSite}', ['idSite' => $idSite]);
-            $this->googleProcessor->processVisits($idSite, $hashedData, $settings);
-        } catch (\Exception $e) {
-            $this->logger->error('ConversionApi: Error sending visits to Google Ads API: {message}', ['message' => $e->getMessage()]);
-            throw $e;
-        }
-    }
-
-    /**
-     * Process and send visits to LinkedIn Conversions API
-     *
-     * @param int $idSite
-     * @param array $hashedData
-     * @param MeasurableSettings $settings
-     */
-    private function processLinkedinVisits($idSite, $hashedData, $settings)
-    {
-        try {
-            $this->logger->info('ConversionApi: Sending visits to LinkedIn Conversions API for site {idSite}', ['idSite' => $idSite]);
-            $this->linkedinProcessor->processVisits($idSite, $hashedData, $settings);
-        } catch (\Exception $e) {
-            $this->logger->error('ConversionApi: Error sending visits to LinkedIn Conversions API: {message}', ['message' => $e->getMessage()]);
-            throw $e;
-        }
-    }
+//    /**
+//     * Process and send visits to Google Ads API
+//     * @param int $idSite
+//     * @param array $hashedData
+//     * @param MeasurableSettings $settings
+//     */
+//    private function processGoogleVisits($idSite, $timezone, $settings, $hashedData)
+//    {
+//        try {
+//            $this->logger->info('ConversionApi: Sending visits to Google Ads API for site {idSite}', ['idSite' => $idSite]);
+//            $this->googleProcessor->processVisits($idSite, $timezone, $settings, $hashedData);
+//        } catch (\Exception $e) {
+//            $this->logger->error('ConversionApi: Error sending visits to Google Ads API: {message}', ['message' => $e->getMessage()]);
+//            throw $e;
+//        }
+//    }
+//
+//    /**
+//     * Process and send visits to LinkedIn Conversions API
+//     *
+//     * @param int $idSite
+//     * @param array $hashedData
+//     * @param MeasurableSettings $settings
+//     */
+//    private function processLinkedinVisits($idSite, $timezone, $settings, $hashedData)
+//    {
+//        try {
+//            $this->logger->info('ConversionApi: Sending visits to LinkedIn Conversions API for site {idSite}', ['idSite' => $idSite]);
+//            $this->linkedinProcessor->processVisits($idSite, $timezone, $settings, $hashedData);
+//        } catch (\Exception $e) {
+//            $this->logger->error('ConversionApi: Error sending visits to LinkedIn Conversions API: {message}', ['message' => $e->getMessage()]);
+//            throw $e;
+//        }
+//    }
 
     /**
      * Check if Meta integration is enabled and configured

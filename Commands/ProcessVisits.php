@@ -90,6 +90,7 @@ class ProcessVisits extends ConsoleCommand
 
                 $idSite = $site['idsite'];
                 $siteName = $site['name'];
+                $timezone = $site['timezone'];
                 try {
                     // Check if this site has integrations enabled
                     if (!$this->conversionApiManager->isEnabledForSite($idSite)) {
@@ -100,13 +101,14 @@ class ProcessVisits extends ConsoleCommand
                         continue;
                     }
 
-                    $this->logger->info('ConversionApi: Processing site {siteName} (ID: {idSite})', [
+                    $this->logger->info('ConversionApi: Processing site {siteName} (ID: {idSite}) (TZ: {timezone})', [
                         'siteName' => $siteName,
-                        'idSite' => $idSite
+                        'idSite' => $idSite,
+                        'timezone' => $timezone
                     ]);
 
                     // Process all conversion APIs for this site
-                    $this->conversionApiManager->processData($idSite, $startDate, $endDate);
+                    $this->conversionApiManager->processData($idSite, $timezone, $startDate, $endDate);
 
                     $this->logger->info('ConversionApi: Completed processing for {siteName} (ID: {idSite})', [
                         'siteName' => $siteName,
