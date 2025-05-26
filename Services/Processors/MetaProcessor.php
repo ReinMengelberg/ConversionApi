@@ -178,7 +178,7 @@ class MetaProcessor
             foreach ($visit['actionDetails'] as $action) {
                 // Process page views (actions)
                 if ($action['type'] === 'action') {
-                    $eventTime = $this->convertToUtcUnix($action['timestamp'] ?? time(), $timezone);
+                    $eventTime = $this->convertToUtcUnix($action['timestamp'], $timezone);
                     $eventId = $action['idpageview'] ?? md5(($action['url'] ?? '') . $eventTime);
                     $eventSourceUrl = $action['url'] ?? '';
 
@@ -196,7 +196,7 @@ class MetaProcessor
                 } elseif ($action['type'] === 'event') {
                     // Process custom events with category mapping
                     $eventCategory = $action['eventCategory'] ?? '';
-                    $eventTime = $this->convertToUtcUnix($action['timestamp'] ?? time(), $timezone);
+                    $eventTime = $this->convertToUtcUnix($action['timestamp'], $timezone);
 
                     // Create EventSettings instance with site settings
                     $eventSettings = new \Piwik\Plugins\ConversionApi\Settings\EventSettings($settings);
@@ -303,19 +303,22 @@ class MetaProcessor
     /**
      * Convert Localized timestamp to UTC unix timestamp
      *
-     * @param int $timestamp Timestamp to convert
+     * This function takes a timestamp that represents local time in a given timezone
+     * and converts it to a proper UTC unix timestamp.
+     *
+     * @param int $timestamp Localized timestamp to convert (represents local time)
      * @param string $timezone Timezone in tz format
      * @return int UTC unix timestamp
      */
     private function convertToUtcUnix(int $timestamp, string $timezone): int
     {
-        // Create a DateTime object in the specified timezone
-        $dt = new \DateTime();
-        $dt->setTimestamp($timestamp);
-        $dt->setTimezone(new \DateTimeZone($timezone));
-        $dt->setTimezone(new \DateTimeZone('UTC'));
-        return $dt->getTimestamp();
+        $dt = new \DateTime('@' . $timestamp);
+        $dateTimeString = $dt->format('Y-m-d H:i:s');
+        $localDt = \DateTime::createFromFormat('Y-m-d H:i:s', $dateTimeString, new \DateTimeZone($timezone));
+        $localDt->setTimezone(new \DateTimeZone('UTC'));
+        return $localDt->getTimestamp();
     }
+
 
     /**
      * Send data to Meta Conversion API using Matomo's HTTP client
@@ -379,6 +382,7 @@ class MetaProcessor
                 throw new \Exception('Failed to decode response from Meta API: ' . $response);
             }
 
+
             if (isset($responseData['error'])) {
                 $errorMessage = $responseData['error']['message'] ?? 'Unknown error';
                 $errorCode = isset($responseData['error']['code']) ? " (Code: {$responseData['error']['code']})" : '';
@@ -396,6 +400,27 @@ class MetaProcessor
                     $errorDetails .= "\n- Trace ID: " . $responseData['error']['fbtrace_id'];
                 }
 
+                // TODO: REMOVE IN PROD
+                $timestampInfo = "\n- Event Timestamps:";
+                if (!empty($body['data'])) {
+                    foreach ($body['data'] as $index => $event) {
+                        $eventName = $event['event_name'] ?? 'Unknown';
+                        $eventTime = $event['event_time'] ?? 'Not set';
+                        $formattedTime = '';
+
+                        if (is_numeric($eventTime)) {
+                            $dt = new \DateTime();
+                            $dt->setTimestamp($eventTime);
+                            $dt->setTimezone(new \DateTimeZone('UTC'));
+                            $formattedTime = ' (' . $dt->format('Y-m-d H:i:s') . ' UTC)';
+                        }
+
+                        $timestampInfo .= "\n  Event #{$index} [{$eventName}]: {$eventTime}{$formattedTime}";
+                    }
+                    $errorDetails .= $timestampInfo;
+                }
+
+                $this->logger->error("Meta API Error{$errorType}{$errorCode}: {$errorMessage}{$errorDetails}");
                 throw new \Exception("Meta API Error{$errorType}{$errorCode}: {$errorMessage}{$errorDetails}");
             }
 

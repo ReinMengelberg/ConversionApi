@@ -112,10 +112,11 @@ class ConversionApiManager
             return;
         }
 
-        // Pre-process data with Services
+        // Pre-process data with Services`
         $expandedVisits = $this->visitExpandService->expandVisits($visits, $settings);
         $formattedVisits = $this->visitFormatService->formatVisits($expandedVisits, $settings);
         $hashedVisits = $this->visitHashService->hashVisits($formattedVisits, $settings);
+
         $this->logger->info('ConversionApi: Expanded, formatted and hashed {count} visits for site {idSite}', ['count' => count($hashedVisits), 'idSite' => $idSite]);
 
         // Process Meta if enabled
