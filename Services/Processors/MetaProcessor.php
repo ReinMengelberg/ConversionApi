@@ -39,12 +39,13 @@ class MetaProcessor
     /**
      * Process and send visits to Meta Conversion API
      *
-     * @param int $idSite Site ID
      * @param array $visits Array of visit data
+     * @param int $idSite Site ID
+     * @param string $timezone Timezone in tz format
      * @param MeasurableSettings $settings Site settings
      * @return void
      */
-    public function processVisits($idSite, array $visits, MeasurableSettings $settings)
+    public function processVisits(array $visits, int $idSite, string $timezone, MeasurableSettings $settings)
     {
         if (empty($visits)) {
             $this->logger->info('MetaProcessor: No visits to process for site {idSite}', ['idSite' => $idSite]);
@@ -72,7 +73,7 @@ class MetaProcessor
 
         foreach ($visits as $visit) {
             try {
-                $metaData = $this->transformVisitForMeta($visit, $settings);
+                $metaData = $this->transformVisitForMeta($visit, $settings, $timezone);
                 if ($metaData && !empty($metaData['data'])) {
                     $response = $this->sendDataToMeta(
                         $metaData,
@@ -114,9 +115,10 @@ class MetaProcessor
      *
      * @param array $visit Visit data
      * @param MeasurableSettings $settings Site settings
+     * @param string $timezone Timezone in tz format
      * @return array|null Transformed data or null if no events to send
      */
-    private function transformVisitForMeta(array $visit, MeasurableSettings $settings)
+    private function transformVisitForMeta(array $visit, MeasurableSettings $settings, string $timezone)
     {
         if (empty($visit)) {
             return null;
@@ -176,7 +178,7 @@ class MetaProcessor
             foreach ($visit['actionDetails'] as $action) {
                 // Process page views (actions)
                 if ($action['type'] === 'action') {
-                    $eventTime = $this->getTimestamp($action['timestamp'] ?? time());
+                    $eventTime = $this->convertToUtcUnix($action['timestamp'] ?? time(), $timezone);;
                     $eventId = $action['idpageview'] ?? md5(($action['url'] ?? '') . $eventTime);
                     $eventSourceUrl = $action['url'] ?? '';
 
@@ -218,7 +220,7 @@ class MetaProcessor
                         $events[] = $event;
 
                     } else {
-                        $this->logger->warning('MetaProcessor: No Meta event mapping found for category {category}', [
+                        $this->logger->info('MetaProcessor: No Meta event mapping found for category {category}', [
                             'category' => $eventCategory
                         ]);
                     }
@@ -300,15 +302,20 @@ class MetaProcessor
     }
 
     /**
-     * Convert timestamp to UTC unix timestamp
+     * Convert Localized timestamp to UTC unix timestamp
      *
      * @param int $timestamp Timestamp to convert
+     * @param string $timezone Timezone in tz format
      * @return int UTC unix timestamp
      */
-    private function getTimestamp($timestamp)
+    private function convertToUtcUnix(int $timestamp, string $timezone): int
     {
-        // Meta expects timestamps in seconds
-        return (int) $timestamp;
+        // Create a DateTime object in the specified timezone
+        $dt = new \DateTime();
+        $dt->setTimestamp($timestamp);
+        $dt->setTimezone(new \DateTimeZone($timezone));
+        $dt->setTimezone(new \DateTimeZone('UTC'));
+        return $dt->getTimestamp();
     }
 
     /**
@@ -374,7 +381,23 @@ class MetaProcessor
             }
 
             if (isset($responseData['error'])) {
-                throw new \Exception('Meta API error: ' . ($responseData['error']['message'] ?? 'Unknown error'));
+                $errorMessage = $responseData['error']['message'] ?? 'Unknown error';
+                $errorCode = isset($responseData['error']['code']) ? " (Code: {$responseData['error']['code']})" : '';
+                $errorType = isset($responseData['error']['type']) ? " [{$responseData['error']['type']}]" : '';
+
+                // Format the user-friendly parts of the error message
+                $errorDetails = '';
+                if (isset($responseData['error']['error_user_title'])) {
+                    $errorDetails .= "\n- Issue: " . $responseData['error']['error_user_title'];
+                }
+                if (isset($responseData['error']['error_user_msg'])) {
+                    $errorDetails .= "\n- Details: " . $responseData['error']['error_user_msg'];
+                }
+                if (isset($responseData['error']['fbtrace_id'])) {
+                    $errorDetails .= "\n- Trace ID: " . $responseData['error']['fbtrace_id'];
+                }
+
+                throw new \Exception("Meta API Error{$errorType}{$errorCode}: {$errorMessage}{$errorDetails}");
             }
 
             return $responseData;
