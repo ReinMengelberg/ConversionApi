@@ -178,7 +178,7 @@ class MetaProcessor
             foreach ($visit['actionDetails'] as $action) {
                 // Process page views (actions)
                 if ($action['type'] === 'action') {
-                    $eventTime = $this->convertToUtcUnix($action['timestamp'] ?? time(), $timezone);;
+                    $eventTime = $this->convertToUtcUnix($action['timestamp'] ?? time(), $timezone);
                     $eventId = $action['idpageview'] ?? md5(($action['url'] ?? '') . $eventTime);
                     $eventSourceUrl = $action['url'] ?? '';
 
@@ -193,14 +193,13 @@ class MetaProcessor
                     ];
 
                     $events[] = $event;
-                } // Process custom events with category mapping
-                elseif ($action['type'] === 'event') {
+                } elseif ($action['type'] === 'event') {
+                    // Process custom events with category mapping
                     $eventCategory = $action['eventCategory'] ?? '';
+                    $eventTime = $this->convertToUtcUnix($action['timestamp'] ?? time(), $timezone);
 
                     // Create EventSettings instance with site settings
                     $eventSettings = new \Piwik\Plugins\ConversionApi\Settings\EventSettings($settings);
-
-                    // Use the EventSettings to get the Meta event name based on the configured category mappings
                     $metaEventName = $eventSettings->getStandardEventName($eventCategory, 'meta');
 
                     if ($metaEventName) {
