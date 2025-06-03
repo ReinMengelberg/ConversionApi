@@ -102,6 +102,57 @@
             <!-- Event Category Mappings Section -->
             <div class="card">
                 <div class="card-header">
+                    <h3 class="card-title">Action Mappings</h3>
+                </div>
+                <div class="card-content">
+                    <p class="description">Actions (Pageviews) are always mapped to the following event categories.</p>
+
+                    <div class="form-table">
+                        <div class="form-table-header">
+                            <div class="form-table-cell">Matomo Action</div>
+                            <div class="form-table-cell">Google Secondary Conversion Action</div>
+                            <div class="form-table-cell">Meta Event Name</div>
+                            <div class="form-table-cell">LinkedIn Event Name</div>
+                        </div>
+
+                        <div id="mappings-container">
+                            <!-- Actopm Mapping mapping -->
+                            <div class="form-table-row mapping-row">
+                                <div class="form-table-cell" data-label="Matomo Action">
+                                    <div class="platform-event-name">action</div>
+                                </div>
+                                <div class="form-table-cell" data-label="Google Conversion Action">
+                                    <div class="platform-event-name">page_view</div>
+                                </div>
+                                <div class="form-table-cell" data-label="Meta Event Name">
+                                    <div class="platform-event-name">ViewContent</div>
+                                </div>
+                                <div class="form-table-cell" data-label="LinkedIn Event Name">
+                                    <div class="platform-event-name">view_content</div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="form-table-helper">
+                            <h4>Understanding Action Mapping</h4>
+                            <p>Action mappings track user engagement events like pageviews, content interactions, and website browsing behavior. These events are sent to advertising platforms to enhance audience targeting and improve attribution accuracy. The event names for each platform are predefined and cannot be changed to ensure compatibility with the platform APIs.</p>
+
+                            <h5>Important Configuration Notes:</h5>
+                            <ul>
+                                <li><strong>Audience Building:</strong> These events help create remarketing audiences and improve Similar Audience targeting across all platforms.</li>
+                                <li><strong>Attribution Enhancement:</strong> When combined with first-party customer data (email, phone), these events improve cross-device and cross-browser attribution.</li>
+                                <li><strong>Data Enrichment:</strong> All action events are automatically enriched with available customer identifiers to maximize attribution accuracy.</li>
+                                <li><strong>Google Ads:</strong> Set up "page_view" as a <strong>Secondary Conversion Action</strong> to ensure it doesn't count toward your primary conversion metrics but still feeds Smart Bidding algorithms with valuable engagement data.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Category Mappings Section -->
+            <div class="card">
+                <div class="card-header">
                     <h3 class="card-title">Event Category Mappings</h3>
                 </div>
                 <div class="card-content">
@@ -110,7 +161,7 @@
                     <div class="form-table">
                         <div class="form-table-header">
                             <div class="form-table-cell">Matomo Event Category</div>
-                            <div class="form-table-cell">Google Event Name</div>
+                            <div class="form-table-cell">Google Primary Conversion Action</div>
                             <div class="form-table-cell">Meta Event Name</div>
                             <div class="form-table-cell">LinkedIn Event Name</div>
                         </div>
@@ -125,7 +176,7 @@
                                            value="{{ settings.eventCategories.lead.getValue() }}"
                                            placeholder="Matomo category for leads" />
                                 </div>
-                                <div class="form-table-cell" data-label="Google Event Name">
+                                <div class="form-table-cell" data-label="Google Conversion Action">
                                     <div class="platform-event-name">generate_lead</div>
                                 </div>
                                 <div class="form-table-cell" data-label="Meta Event Name">
@@ -145,7 +196,7 @@
                                            value="{{ settings.eventCategories.account.getValue() }}"
                                            placeholder="Matomo category for account creation" />
                                 </div>
-                                <div class="form-table-cell" data-label="Google Event Name">
+                                <div class="form-table-cell" data-label="Google Conversion Action">
                                     <div class="platform-event-name">sign_up</div>
                                 </div>
                                 <div class="form-table-cell" data-label="Meta Event Name">
@@ -165,7 +216,7 @@
                                            value="{{ settings.eventCategories.appointment.getValue() }}"
                                            placeholder="Matomo category for appointments" />
                                 </div>
-                                <div class="form-table-cell" data-label="Google Event Name">
+                                <div class="form-table-cell" data-label="Google Conversion Action">
                                     <div class="platform-event-name">schedule</div>
                                 </div>
                                 <div class="form-table-cell" data-label="Meta Event Name">
@@ -185,7 +236,7 @@
                                            value="{{ settings.eventCategories.applicant.getValue() }}"
                                            placeholder="Matomo category for job applications" />
                                 </div>
-                                <div class="form-table-cell" data-label="Google Event Name">
+                                <div class="form-table-cell" data-label="Google Conversion Action">
                                     <div class="platform-event-name">submit_application</div>
                                 </div>
                                 <div class="form-table-cell" data-label="Meta Event Name">
@@ -197,9 +248,17 @@
                             </div>
                         </div>
 
+
                         <div class="form-table-helper">
                             <h4>Understanding Event Mapping</h4>
-                            <p>This table allows you to map your Matomo event categories to standard event names used by advertising platforms. Enter your custom Matomo category names in the first column. The event names for each platform are predefined and cannot be changed to ensure compatibility with the platform APIs.</p>
+                            <p>Event category mappings track your most valuable business conversions that directly contribute to revenue and business goals. These events are sent to advertising platforms to optimize for meaningful customer actions. Enter your custom Matomo category names in the first column. The event names for each platform are predefined and cannot be changed to ensure compatibility with the platform APIs.</p>
+
+                            <h5>Important Configuration Notes:</h5>
+                            <ul>
+                                <li><strong>Enhanced Conversions:</strong> These events are automatically enriched with first-party customer data (email, phone) to improve attribution accuracy and cross-device tracking.</li>
+                                <li><strong>Business Impact:</strong> Unlike pageview actions, these conversions represent actual business value and should align with your key performance indicators and revenue goals.</li>
+                                <li><strong>Google Ads:</strong> Set up these events as <strong>Primary Conversion Actions</strong> to ensure they count toward your main conversion metrics and drive Smart Bidding optimization for business-critical outcomes.</li>
+                            </ul>
 
                             <h5>Examples:</h5>
                             <ul>
@@ -639,7 +698,7 @@
             function updateDataLabels() {
                 $('.mapping-row').each(function() {
                     $(this).find('.form-table-cell').eq(0).attr('data-label', 'Matomo Event Category');
-                    $(this).find('.form-table-cell').eq(1).attr('data-label', 'Google Event Name');
+                    $(this).find('.form-table-cell').eq(1).attr('data-label', 'Google Conversion Action');
                     $(this).find('.form-table-cell').eq(2).attr('data-label', 'Meta Event Name');
                     $(this).find('.form-table-cell').eq(3).attr('data-label', 'LinkedIn Event Name');
                 });

@@ -57,16 +57,20 @@ class GoogleProcessor
         }
     }
 
-    private function getConversionAdjustments(array $visit, int $idSite, string $timezone, MeasurableSettings $settings)
+    private function getConversionAdjustments(array $visit, int $idSite, string $timezone, MeasurableSettings $settings): array
     {
-        // User Data Initialization
-        $userIdentifiers = $this->getUserIdentifiers($visit, $settings);
+        $conversionAdjustments = [];
+        $userIdentifiers = $this->getUserIdentifier($visit, $settings);
+        $actions = $visit['actionDetails'] ?? [];
         $userAgent = $visit['userAgent'] ?? null;
 
-
+        foreach ($actions as $action) {
+            if (action)
+            $conversionAdjustments = array_merge()
+        }
     }
 
-    private function getUserIdentifiers($visit, $settings): array
+    private function getUserIdentifier($visit, $settings): array
     {
         $visitorId = $visit['visitorId'] ?? null;
         $hashedEmail = $visit['hashedEmailValue'] ?? null;
