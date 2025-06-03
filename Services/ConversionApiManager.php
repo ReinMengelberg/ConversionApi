@@ -117,8 +117,6 @@ class ConversionApiManager
         $formattedVisits = $this->visitFormatService->formatVisits($expandedVisits, $settings);
         $hashedVisits = $this->visitHashService->hashVisits($formattedVisits, $settings);
 
-        $this->writeVisitToLogFile($visits[0]);
-
         $this->logger->info('ConversionApi: Expanded, formatted and hashed {count} visits for site {idSite}', ['count' => count($hashedVisits), 'idSite' => $idSite]);
 
         // Process Meta if enabled
@@ -310,16 +308,16 @@ class ConversionApiManager
 //        return true;
 //    }
 
-    private function writeVisitToLogFile($visit)
-    {
-        $logFile = PIWIK_DOCUMENT_ROOT . '/plugins/ConversionApi/tmp/visit_log.json';
-        $jsonData = json_encode($visit, JSON_PRETTY_PRINT);
-
-        $this->logger->info('ConversionApi: Writing visit to log file: {logFile}', ['logFile' => $logFile]);
-
-        if (!is_dir(dirname($logFile))) {
-            mkdir(dirname($logFile), 0755, true);
-        }
-        file_put_contents($logFile, $jsonData . PHP_EOL);
-    }
+//    private function writeVisitToLogFile($visit)
+//    {
+//        $logFile = PIWIK_DOCUMENT_ROOT . '/plugins/ConversionApi/tmp/visit_log.json';
+//        $jsonData = json_encode($visit, JSON_PRETTY_PRINT);
+//
+//        $this->logger->info('ConversionApi: Writing visit to log file: {logFile}', ['logFile' => $logFile]);
+//
+//        if (!is_dir(dirname($logFile))) {
+//            mkdir(dirname($logFile), 0755, true);
+//        }
+//        file_put_contents($logFile, $jsonData . PHP_EOL);
+//    }
 }
