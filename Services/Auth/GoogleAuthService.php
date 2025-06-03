@@ -244,29 +244,22 @@ class GoogleAuthService
     }
 
     /**
-     * Get headers ready for Google Ads API requests
+     * Get the headers required for all Google Ads API calls
+     *
+     * @return array
+     * @throws Exception
      */
     public function getApiHeaders()
     {
-        if (!$this->settings) {
-            throw new Exception('Settings not loaded. Call getAccessToken($settings) first.');
-        }
-
         $headers = [
-            'Authorization' => 'Bearer ' . $this->accessToken,
-            'developer-token' => $this->getDeveloperToken()
+            'Authorization: Bearer ' . $this->accessToken,
+            'developer-token: ' . $this->getDeveloperToken()
         ];
 
         $loginCustomerId = $this->getLoginCustomerId();
         if (!empty($loginCustomerId)) {
-            $headers['login-customer-id'] = $loginCustomerId;
+            $headers[] = 'login-customer-id: ' . $loginCustomerId;
         }
-
-        $this->logger->debug('GoogleAuthService: Generated API headers', [
-            'has_authorization' => !empty($headers['Authorization']),
-            'has_developer_token' => !empty($headers['developer-token']),
-            'has_login_customer_id' => !empty($headers['login-customer-id'])
-        ]);
 
         return $headers;
     }
