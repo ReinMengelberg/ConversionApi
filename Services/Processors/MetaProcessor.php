@@ -200,7 +200,7 @@ class MetaProcessor
 
                     // Create EventSettings instance with site settings
                     $eventSettings = new \Piwik\Plugins\ConversionApi\Settings\EventSettings($settings);
-                    $metaEventName = $eventSettings->getStandardEventName($eventCategory, 'meta');
+                    $metaEventName = $eventSettings->getMetaEventName($eventCategory);
 
                     if ($metaEventName) {
                         $eventId = $action['id'];

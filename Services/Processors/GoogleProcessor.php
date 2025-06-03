@@ -60,7 +60,7 @@ class GoogleProcessor
 
         $conversionAdjustments = [];
         foreach ($visits as $visit) {
-            $visitAdjustments = $this->getConversionAdjustments($visit, $idSite, $timezone, $settings);
+            $visitAdjustments = $this->getConversionAdjustments($visit, $customerId, $timezone, $settings);
             $conversionAdjustments = array_merge($conversionAdjustments, $visitAdjustments);
         }
 
@@ -80,7 +80,7 @@ class GoogleProcessor
         }
     }
 
-    private function getConversionAdjustments(array $visit, int $idSite, string $timezone, MeasurableSettings $settings): array
+    private function getConversionAdjustments(array $visit, string $customerId, string $timezone, MeasurableSettings $settings): array
     {
         $conversionAdjustments = [];
         $userIdentifiers = $this->getUserIdentifiers($visit, $settings);
@@ -89,24 +89,16 @@ class GoogleProcessor
         $gclid = $visit['gclid'] ?? null;
 
         foreach ($actions as $action) {
-            if ($action['type'] === 'action') {
-                // Process page views as secondary events
-                $adjustment = $this->createPageViewAdjustment($gclid, $action, $userIdentifiers, $userAgent, $timezone);
-                if ($adjustment) {
-                    $conversionAdjustments[] = $adjustment;
-                }
-            } elseif ($action['type'] === 'event') {
-                // Process custom events with category mapping
-                $adjustment = $this->createEventAdjustment($gclid, $action, $userIdentifiers, $userAgent, $timezone, $settings);
-                if ($adjustment) {
-                    $conversionAdjustments[] = $adjustment;
-                }
+            // Process custom events with category mapping
+            $adjustment = $this->createAdjustment($gclid, $action, $userIdentifiers, $userAgent, $customerId, $timezone, $settings);
+            if ($adjustment) {
+                $conversionAdjustments[] = $adjustment;
             }
         }
         return $conversionAdjustments;
     }
 
-    private function createPageViewAdjustment(string $gclid, array $action, array $userIdentifiers, ?string $userAgent, string $timezone): ?array
+    private function createAdjustment(string $gclid, array $action, array $userIdentifiers, ?string $userAgent, string $customerId, string $timezone, MeasurableSettings $settings): ?array
     {
         // Get page view conversion action from settings
         $eventId = $action['id'];
@@ -115,41 +107,24 @@ class GoogleProcessor
             return null;
         }
 
-        $adjustmentDateTime = date('Y-m-d H:i:sP');
-        $adjustment = [
-            'orderId' => $eventId,
-            'conversionAction' => 'page_view',
-            'adjustmentType' => 'ENHANCEMENT',
-            'adjustmentDateTime' => $adjustmentDateTime,
-            'userIdentifiers' => $userIdentifiers,
-            'userAgent' => $userAgent
-        ];
-        if (!empty($gclid)) {
-            $adjustment['gclidDateTimePair'] = $this->getGclidDateTime($gclid, $action, $timezone);
-        }
-
-        return $adjustment;
-    }
-
-    private function createEventAdjustment(string $gclid, array $action, array $userIdentifiers, ?string $userAgent, string $timezone, MeasurableSettings $settings): ?array
-    {
-        $eventId = $action['id'];
-        if (!$eventId) {
-            $this->logger->warning('GoogleProcessor: No event id found for event with category {eventCategory}', [
-                'eventCategory' => $action['eventCategory'] ?? ''
-            ]);
+        if ($action['type'] === 'action') {
+            $eventCategory = 'action';
+        } elseif ($action['type'] === 'event') {
+            $eventCategory = $action['eventCategory'] ?? '';
+        } else {
             return null;
         }
 
-        // Create EventSettings instance with site settings to get mapping
         $eventSettings = new \Piwik\Plugins\ConversionApi\Settings\EventSettings($settings);
-        $conversionAction = $eventSettings->getStandardEventName($action['eventCategory'] ?? '', 'google');
-        if (!$conversionAction) {
-            $this->logger->info('GoogleProcessor: No Google conversion action mapping found for category {category}', [
-                'category' => $action['eventCategory'] ?? ''
+        $conversionActionId = $eventSettings->getGoogleConversionActionId($eventCategory);
+
+        if (!$conversionActionId) {
+            $this->logger->info('GoogleProcessor: No Google conversion action id mapping found for category {category}', [
+                'category' => $eventCategory
             ]);
             return null;
         }
+        $conversionAction = 'customers/' . $customerId . '/conversionActions/' . $conversionActionId;
 
         $adjustmentDateTime = date('Y-m-d H:i:sP');
         $adjustment = [
@@ -170,7 +145,6 @@ class GoogleProcessor
     private function getUserIdentifiers(array $visit, MeasurableSettings $settings): array
     {
         $userId = $visit['userId'] ?? null;
-        $visitorId = $visit['visitorId'] ?? null;
         $hashedEmail = $visit['hashedEmailValue'] ?? null;
         $hashedFirstName = $visit['hashedFirstNameValue'] ?? null;
         $hashedLastName = $visit['hashedLastNameValue'] ?? null;
@@ -213,7 +187,7 @@ class GoogleProcessor
                 if ($hashedFirstName) $addressInfo['hashedFirstName'] = $hashedFirstName;
                 if ($hashedLastName) $addressInfo['hashedLastName'] = $hashedLastName;
                 if ($formattedCity) $addressInfo['city'] = $formattedCity;
-                if ($formattedRegion) $addressInfo['region'] = $formattedRegion;
+                if ($formattedRegion) $addressInfo['state'] = $formattedRegion;
                 if ($formattedCountryCode) $addressInfo['countryCode'] = $formattedCountryCode;
                 if ($formattedZip) $addressInfo['postalCode'] = $formattedZip;
                 if ($hashedAddressValue) $addressInfo['hashedStreetAddress'] = $hashedAddressValue;
@@ -231,7 +205,7 @@ class GoogleProcessor
                 $addressInfo = [];
 
                 if ($formattedCity) $addressInfo['city'] = $formattedCity;
-                if ($formattedRegion) $addressInfo['region'] = $formattedRegion;
+                if ($formattedRegion) $addressInfo['state'] = $formattedRegion;
                 if ($formattedCountryCode) $addressInfo['countryCode'] = $formattedCountryCode;
 
                 if (!empty($addressInfo)) {

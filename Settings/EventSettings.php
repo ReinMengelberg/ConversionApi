@@ -13,28 +13,38 @@ class EventSettings
     /** @var MeasurableSettings */
     private $settings;
 
-    /** @var array Standard event mappings - these are hardcoded */
-    private $standardEventNames = [
-        'lead' => [
-            'google' => 'generate_lead',
-            'meta' => 'Lead',
-            'linkedin' => 'Lead'
-        ],
-        'account' => [
-            'google' => 'sign_up',
-            'meta' => 'CompleteRegistration',
-            'linkedin' => 'Registration'
-        ],
-        'appointment' => [
-            'google' => 'schedule',
-            'meta' => 'Schedule',
-            'linkedin' => 'Appointment'
-        ],
-        'applicant' => [
-            'google' => 'submit_application',
-            'meta' => 'SubmitApplication',
-            'linkedin' => 'JobApply'
-        ]
+    private $eventTypes = [
+        'lead' => 'Lead',
+        'account' => 'Account',
+        'appointment' => 'Appointment',
+        'applicant' => 'Applicant'
+    ];
+
+    /** @var array Standard event mappings for Meta - these are hardcoded */
+    private $metaEventNames = [
+        'action' => 'ViewContent',
+        'lead' => 'Lead',
+        'account' => 'CompleteRegistration',
+        'appointment' => 'Schedule',
+        'applicant' => 'SubmitApplication'
+    ];
+
+    /** @var array Standard event mappings for LinkedIn - these are hardcoded */
+    private $linkedinEventTypes = [
+        'action' => 'key_page_view',
+        'lead' => 'lead',
+        'account' => 'sign_up',
+        'appointment' => 'book_appointment',
+        'applicant' => 'apply_job',
+    ];
+
+    /** @var array Google action types that can be configured */
+    private $googleActionTypes = [
+        'action' => 'Page View',
+        'lead' => 'Generate Lead',
+        'account' => 'Sign Up',
+        'appointment' => 'Schedule',
+        'applicant' => 'Submit Application'
     ];
 
     /**
@@ -56,6 +66,9 @@ class EventSettings
 
         // Initialize event category settings
         $this->initEventCategorySettings();
+
+        // Initialize Google conversion action settings
+        $this->initGoogleActionSettings();
     }
 
     /**
@@ -63,10 +76,51 @@ class EventSettings
      */
     private function initEventCategorySettings()
     {
+        $this->settings->eventCategories = [];
+
         // For each standard event type, create a setting for the Matomo category name
-        foreach (array_keys($this->standardEventNames) as $eventType) {
+        foreach (array_keys($this->eventTypes) as $eventType) {
             $this->settings->eventCategories[$eventType] = $this->createEventCategorySetting($eventType);
         }
+    }
+
+    /**
+     * Initialize Google conversion action settings
+     */
+    private function initGoogleActionSettings()
+    {
+        $this->settings->googleActions = [];
+
+        foreach ($this->googleActionTypes as $actionType => $title) {
+            $this->settings->googleActions[$actionType] = $this->createGoogleActionSetting($actionType, $title);
+        }
+    }
+
+    /**
+     * Create a setting for a specific Google conversion action
+     *
+     * @param string $actionType Google action type (action, lead, account, etc.)
+     * @param string $title Human-readable title
+     * @return Setting
+     */
+    private function createGoogleActionSetting($actionType, $title)
+    {
+        return $this->settings->createSetting(
+            'google_action_' . $actionType,
+            '', // Default empty
+            FieldConfig::TYPE_STRING,
+            function (FieldConfig $field) use ($title) {
+                $field->title = $title . ' Conversion Action ID';
+                $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
+                $field->description = 'Google Ads conversion action ID only';
+                $field->inlineHelp = 'Example: 987654321 (we\'ll use your customer ID from API settings)';
+                $field->validate = function ($value) {
+                    if (!empty($value) && !preg_match('/^\d+$/', $value)) {
+                        throw new \Exception('Invalid Google conversion action ID. Expected numeric ID only (e.g., 987654321)');
+                    }
+                };
+            }
+        );
     }
 
     /**
@@ -94,7 +148,7 @@ class EventSettings
     }
 
     /**
-     * Get human-readable title for an event type
+     * Get the human-readable title for an event type
      *
      * @param string $eventType
      * @return string
@@ -112,7 +166,7 @@ class EventSettings
     }
 
     /**
-     * Get description for an event type
+     * Get the description for an event type
      *
      * @param string $eventType
      * @return string
@@ -197,18 +251,43 @@ class EventSettings
     }
 
     /**
-     * Get standard event name for a given Matomo category and platform
+     * Get the standard event type for a given Matomo identifier
      *
-     * @param string $matomoCategory Matomo event category to look up
-     * @param string $platform Platform to get event name for (google, meta, linkedin)
-     * @return string|null Standard event name or null if not found
+     * @param string $eventCategory Matomo event category or 'action' for pageviews
+     * @return string|null Standard event type or null if not found
      */
-    public function getStandardEventName($matomoCategory, $platform)
+    public function getStandardEventType(string $eventCategory): ?string
     {
-        // First, check if this category directly matches any of our standard event types
+        // Handle pageview/action directly
+        if ($eventCategory === 'action') {
+            return 'action';
+        }
+        // Find which standard event type this Matomo category corresponds to
         foreach ($this->settings->eventCategories as $eventType => $setting) {
-            if ($setting->getValue() === $matomoCategory) {
-                return $this->standardEventNames[$eventType][$platform] ?? null;
+            if ($setting->getValue() === $eventCategory) {
+                return $eventType;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get Meta event name for a given Matomo category or action
+     *
+     * @param string $eventCategory Matomo event category or 'action' for pageviews
+     * @return string|null Meta event name or null if not found
+     */
+    public function getMetaEventName(string $eventCategory): ?string
+    {
+        // Handle pageview/action directly
+        if ($eventCategory === 'action') {
+            return $this->metaEventNames['action'] ?? null;
+        }
+
+        // Find which standard event type this Matomo category corresponds to
+        foreach ($this->settings->eventCategories as $eventType => $setting) {
+            if ($setting->getValue() === $eventCategory) {
+                return $this->metaEventNames[$eventType] ?? null;
             }
         }
 
@@ -216,22 +295,54 @@ class EventSettings
     }
 
     /**
-     * Get all event mappings as an associative array
+     * Get the LinkedIn event type for a given Matomo category or action
      *
-     * @return array Associative array of Matomo category => [platform => event name]
+     * @param string $eventCategory Matomo event category or 'action' for pageviews
+     * @return string|null LinkedIn event type or null if not found
      */
-    public function getAllEventMappings()
+    public function getLinkedInEventType(string $eventCategory): ?string
     {
-        $result = [];
+        // Handle pageview/action directly
+        if ($eventCategory === 'action') {
+            return $this->linkedinEventTypes['action'] ?? null;
+        }
 
+        // Find which standard event type this Matomo category corresponds to
         foreach ($this->settings->eventCategories as $eventType => $setting) {
-            $matomoCategory = $setting->getValue();
-
-            if (!empty($matomoCategory)) {
-                $result[$matomoCategory] = $this->standardEventNames[$eventType];
+            if ($setting->getValue() === $eventCategory) {
+                return $this->linkedinEventTypes[$eventType] ?? null;
             }
         }
 
-        return $result;
+        return null;
+    }
+
+    /**
+     * Get the Google conversion action ID for a given Matomo category or action
+     *
+     * @param string $eventCategory Matomo event category or 'action' for pageviews
+     * @return string|null Google conversion action ID or null if not found
+     */
+    public function getGoogleConversionActionId(string $eventCategory): ?string
+    {
+        // Handle pageview/action directly
+        if ($eventCategory === 'action') {
+            if (isset($this->settings->googleActions['action'])) {
+                $value = $this->settings->googleActions['action']->getValue();
+                return !empty($value) ? $value : null;
+            }
+            return null;
+        }
+        // Find which standard event type this Matomo category corresponds to
+        foreach ($this->settings->eventCategories as $eventType => $setting) {
+            if ($setting->getValue() === $eventCategory) {
+                if (isset($this->settings->googleActions[$eventType])) {
+                    $value = $this->settings->googleActions[$eventType]->getValue();
+                    return !empty($value) ? $value : null;
+                }
+                return null;
+            }
+        }
+        return null;
     }
 }

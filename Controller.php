@@ -45,7 +45,7 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
 
         if (Common::getRequestVar('submitted', '', 'string') === 'true') {
             // Process form submission
-            $this->processFormSubmission($settings);
+            $this->processApiFormSubmission($settings);
 
             // Set flash message in session instead of URL parameter
             $session->apiSettingsUpdated = true;
@@ -218,7 +218,7 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
         ]);
     }
 
-    private function processFormSubmission($settings)
+    private function processApiFormSubmission($settings)
     {
         // Meta API settings
         $settings->metapixelId->setValue(Common::getRequestVar('meta_pixel_id', '', 'string'));
@@ -290,13 +290,30 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
      */
     private function processEventFormSubmission($settings)
     {
-        // Process event categories
+        // Process event categories for standard event types
         $eventCategories = Common::getRequestVar('eventCategories', [], 'array');
 
         // Update each event category setting
         foreach ($eventCategories as $eventType => $categoryName) {
             if (isset($settings->eventCategories[$eventType])) {
                 $settings->eventCategories[$eventType]->setValue(trim($categoryName));
+            }
+        }
+
+        // Process Google conversion action IDs for all standard event types (including action/pageview)
+        $googleActions = Common::getRequestVar('googleActions', [], 'array');
+
+        // Update each Google action setting with validation
+        foreach ($googleActions as $actionType => $actionId) {
+            if (isset($settings->googleActions[$actionType])) {
+                $trimmedValue = trim($actionId);
+
+                // Validate format: should be numeric only (if not empty)
+                if (!empty($trimmedValue) && !preg_match('/^\d+$/', $trimmedValue)) {
+                    throw new \Exception("Invalid Google conversion action ID for {$actionType}. Expected numeric ID only (e.g., 987654321)");
+                }
+
+                $settings->googleActions[$actionType]->setValue($trimmedValue);
             }
         }
 
