@@ -99,25 +99,88 @@
                 </div>
             </div>
 
+            <!-- Action Mappings Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Action Mappings</h3>
+                </div>
+                <div class="card-content">
+                    <p class="description">Actions (Pageviews) are always mapped to the following event categories.</p>
+
+                    <div class="form-table">
+                        <div class="form-table-header">
+                            <div class="form-table-cell">Event Type</div>
+                            <div class="form-table-cell">Matomo Action</div>
+                            <div class="form-table-cell">Google Conversion Action ID</div>
+                            <div class="form-table-cell">Meta Event Name</div>
+                            <div class="form-table-cell">LinkedIn Event Type</div>
+                        </div>
+
+                        <div id="mappings-container">
+                            <!-- Action Mapping -->
+                            <div class="form-table-row mapping-row">
+                                <div class="form-table-cell" data-label="Event Type">
+                                    <div class="platform-event-name">action</div>
+                                </div>
+                                <div class="form-table-cell" data-label="Matomo Action">
+                                    <div class="platform-event-name">action</div>
+                                </div>
+                                <div class="form-table-cell" data-label="Google Conversion Action">
+                                    <input type="text"
+                                           name="googleActions[action]"
+                                           class="form-control google-action-input"
+                                           value="{{ settings.googleActions.action.getValue() }}"
+                                           placeholder="987654321" />
+                                </div>
+                                <div class="form-table-cell" data-label="Meta Event Name">
+                                    <div class="platform-event-name">ViewContent</div>
+                                </div>
+                                <div class="form-table-cell" data-label="LinkedIn Event Type">
+                                    <div class="platform-event-name">key_page_view</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-table-helper">
+                            <h4>Understanding Action Mapping</h4>
+                            <p>Action mappings track user engagement events like pageviews, content interactions, and website browsing behavior. These events are sent to advertising platforms to enhance audience targeting and improve attribution accuracy.</p>
+
+                            <h5>Important Configuration Notes:</h5>
+                            <ul>
+                                <li><strong>Audience Building:</strong> These events help create remarketing audiences and improve Similar Audience targeting across all platforms.</li>
+                                <li><strong>Attribution Enhancement:</strong> When combined with first-party customer data, these events improve cross-device and cross-browser attribution.</li>
+                                <li><strong>Data Enrichment:</strong> All action events are automatically enriched with available customer identifiers to maximize attribution accuracy.</li>
+                                <li><strong>Google Conversion Action:</strong> Enter only the conversion action ID (e.g., "987654321"). The plugin will automatically construct the full resource name using your customer ID from API settings. Set up as <strong>Secondary Conversion Actions</strong> in Google Ads.</li>
+                                <li><strong>Meta &amp; LinkedIn:</strong> These platforms use standardized action names that cannot be changed to ensure API compatibility.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Event Category Mappings Section -->
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Event Category Mappings</h3>
                 </div>
                 <div class="card-content">
-                    <p class="description">Configure your Matomo event categories to match standardized event names in Google, Meta, and LinkedIn. Only the Matomo event categories can be customized.</p>
+                    <p class="description">Configure your Matomo event categories and their corresponding Google Ads conversion actions. Meta and LinkedIn use standardized event names.</p>
 
                     <div class="form-table">
                         <div class="form-table-header">
+                            <div class="form-table-cell">Event Type</div>
                             <div class="form-table-cell">Matomo Event Category</div>
-                            <div class="form-table-cell">Google Event Name</div>
+                            <div class="form-table-cell">Google Conversion Action ID</div>
                             <div class="form-table-cell">Meta Event Name</div>
-                            <div class="form-table-cell">LinkedIn Event Name</div>
+                            <div class="form-table-cell">LinkedIn Event Type</div>
                         </div>
 
                         <div id="mappings-container">
                             <!-- Lead mapping -->
                             <div class="form-table-row mapping-row">
+                                <div class="form-table-cell" data-label="Event Type">
+                                    <div class="platform-event-name">lead</div>
+                                </div>
                                 <div class="form-table-cell" data-label="Matomo Event Category">
                                     <input type="text"
                                            name="eventCategories[lead]"
@@ -125,19 +188,26 @@
                                            value="{{ settings.eventCategories.lead.getValue() }}"
                                            placeholder="Matomo category for leads" />
                                 </div>
-                                <div class="form-table-cell" data-label="Google Event Name">
-                                    <div class="platform-event-name">generate_lead</div>
+                                <div class="form-table-cell" data-label="Google Conversion Action">
+                                    <input type="text"
+                                           name="googleActions[lead]"
+                                           class="form-control google-action-input"
+                                           value="{{ settings.googleActions.lead.getValue() }}"
+                                           placeholder="987654321" />
                                 </div>
                                 <div class="form-table-cell" data-label="Meta Event Name">
                                     <div class="platform-event-name">Lead</div>
                                 </div>
-                                <div class="form-table-cell" data-label="LinkedIn Event Name">
-                                    <div class="platform-event-name">Lead</div>
+                                <div class="form-table-cell" data-label="LinkedIn Event Type">
+                                    <div class="platform-event-name">lead</div>
                                 </div>
                             </div>
 
                             <!-- Account mapping -->
                             <div class="form-table-row mapping-row">
+                                <div class="form-table-cell" data-label="Event Type">
+                                    <div class="platform-event-name">account</div>
+                                </div>
                                 <div class="form-table-cell" data-label="Matomo Event Category">
                                     <input type="text"
                                            name="eventCategories[account]"
@@ -145,19 +215,26 @@
                                            value="{{ settings.eventCategories.account.getValue() }}"
                                            placeholder="Matomo category for account creation" />
                                 </div>
-                                <div class="form-table-cell" data-label="Google Event Name">
-                                    <div class="platform-event-name">sign_up</div>
+                                <div class="form-table-cell" data-label="Google Conversion Action">
+                                    <input type="text"
+                                           name="googleActions[account]"
+                                           class="form-control google-action-input"
+                                           value="{{ settings.googleActions.account.getValue() }}"
+                                           placeholder="987654321" />
                                 </div>
                                 <div class="form-table-cell" data-label="Meta Event Name">
                                     <div class="platform-event-name">CompleteRegistration</div>
                                 </div>
-                                <div class="form-table-cell" data-label="LinkedIn Event Name">
-                                    <div class="platform-event-name">Registration</div>
+                                <div class="form-table-cell" data-label="LinkedIn Event Type">
+                                    <div class="platform-event-name">sign_up</div>
                                 </div>
                             </div>
 
                             <!-- Appointment mapping -->
                             <div class="form-table-row mapping-row">
+                                <div class="form-table-cell" data-label="Event Type">
+                                    <div class="platform-event-name">appointment</div>
+                                </div>
                                 <div class="form-table-cell" data-label="Matomo Event Category">
                                     <input type="text"
                                            name="eventCategories[appointment]"
@@ -165,19 +242,26 @@
                                            value="{{ settings.eventCategories.appointment.getValue() }}"
                                            placeholder="Matomo category for appointments" />
                                 </div>
-                                <div class="form-table-cell" data-label="Google Event Name">
-                                    <div class="platform-event-name">schedule</div>
+                                <div class="form-table-cell" data-label="Google Conversion Action">
+                                    <input type="text"
+                                           name="googleActions[appointment]"
+                                           class="form-control google-action-input"
+                                           value="{{ settings.googleActions.appointment.getValue() }}"
+                                           placeholder="987654321" />
                                 </div>
                                 <div class="form-table-cell" data-label="Meta Event Name">
                                     <div class="platform-event-name">Schedule</div>
                                 </div>
-                                <div class="form-table-cell" data-label="LinkedIn Event Name">
-                                    <div class="platform-event-name">Appointment</div>
+                                <div class="form-table-cell" data-label="LinkedIn Event Type">
+                                    <div class="platform-event-name">book_appointment</div>
                                 </div>
                             </div>
 
                             <!-- Applicant mapping -->
                             <div class="form-table-row mapping-row">
+                                <div class="form-table-cell" data-label="Event Type">
+                                    <div class="platform-event-name">applicant</div>
+                                </div>
                                 <div class="form-table-cell" data-label="Matomo Event Category">
                                     <input type="text"
                                            name="eventCategories[applicant]"
@@ -185,27 +269,32 @@
                                            value="{{ settings.eventCategories.applicant.getValue() }}"
                                            placeholder="Matomo category for job applications" />
                                 </div>
-                                <div class="form-table-cell" data-label="Google Event Name">
-                                    <div class="platform-event-name">submit_application</div>
+                                <div class="form-table-cell" data-label="Google Conversion Action">
+                                    <input type="text"
+                                           name="googleActions[applicant]"
+                                           class="form-control google-action-input"
+                                           value="{{ settings.googleActions.applicant.getValue() }}"
+                                           placeholder="987654321" />
                                 </div>
                                 <div class="form-table-cell" data-label="Meta Event Name">
                                     <div class="platform-event-name">SubmitApplication</div>
                                 </div>
-                                <div class="form-table-cell" data-label="LinkedIn Event Name">
-                                    <div class="platform-event-name">JobApply</div>
+                                <div class="form-table-cell" data-label="LinkedIn Event Type">
+                                    <div class="platform-event-name">apply_job</div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="form-table-helper">
                             <h4>Understanding Event Mapping</h4>
-                            <p>This table allows you to map your Matomo event categories to standard event names used by advertising platforms. Enter your custom Matomo category names in the first column. The event names for each platform are predefined and cannot be changed to ensure compatibility with the platform APIs.</p>
+                            <p>Event category mappings track your most valuable business conversions that directly contribute to revenue and business goals. Enter your custom Matomo category names and corresponding Google Ads conversion action resource names.</p>
 
-                            <h5>Examples:</h5>
+                            <h5>Important Configuration Notes:</h5>
                             <ul>
-                                <li>If your Matomo tracks lead form submissions with a category name like "form_submit" or "lead_gen", enter that in the first row.</li>
-                                <li>For account creations, you might use "signup", "register", or "create_account" as your Matomo category.</li>
-                                <li>Leave fields blank if you don't track a particular type of conversion.</li>
+                                <li><strong>Enhanced Conversions:</strong> These events are automatically enriched with first-party customer data to improve attribution accuracy and cross-device tracking.</li>
+                                <li><strong>Business Impact:</strong> Unlike pageview actions, these conversions represent actual business value and should align with your key performance indicators and revenue goals.</li>
+                                <li><strong>Google Conversion Actions:</strong> Enter only the conversion action ID (e.g., "987654321"). The plugin will automatically construct the full resource name using your customer ID from API settings. Set up as <strong>Primary Conversion Actions</strong> in Google Ads.</li>
+                                <li><strong>Meta &amp; LinkedIn:</strong> These platforms use standardized event names that cannot be changed to ensure API compatibility.</li>
                             </ul>
                         </div>
                     </div>
@@ -639,9 +728,9 @@
             function updateDataLabels() {
                 $('.mapping-row').each(function() {
                     $(this).find('.form-table-cell').eq(0).attr('data-label', 'Matomo Event Category');
-                    $(this).find('.form-table-cell').eq(1).attr('data-label', 'Google Event Name');
+                    $(this).find('.form-table-cell').eq(1).attr('data-label', 'Google Conversion Action');
                     $(this).find('.form-table-cell').eq(2).attr('data-label', 'Meta Event Name');
-                    $(this).find('.form-table-cell').eq(3).attr('data-label', 'LinkedIn Event Name');
+                    $(this).find('.form-table-cell').eq(3).attr('data-label', 'LinkedIn Event Type');
                 });
             }
 

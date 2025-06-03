@@ -200,10 +200,9 @@ class MetaProcessor
 
                     // Create EventSettings instance with site settings
                     $eventSettings = new \Piwik\Plugins\ConversionApi\Settings\EventSettings($settings);
-                    $metaEventName = $eventSettings->getStandardEventName($eventCategory, 'meta');
+                    $metaEventName = $eventSettings->getMetaEventName($eventCategory);
 
                     if ($metaEventName) {
-                        $metaEventName = $eventSettings->getStandardEventName($eventCategory, 'meta');
                         $eventId = $action['id'];
                         $eventSourceUrl = $action['url'] ?? '';
 
@@ -398,26 +397,6 @@ class MetaProcessor
                 }
                 if (isset($responseData['error']['fbtrace_id'])) {
                     $errorDetails .= "\n- Trace ID: " . $responseData['error']['fbtrace_id'];
-                }
-
-                // TODO: REMOVE IN PROD
-                $timestampInfo = "\n- Event Timestamps:";
-                if (!empty($body['data'])) {
-                    foreach ($body['data'] as $index => $event) {
-                        $eventName = $event['event_name'] ?? 'Unknown';
-                        $eventTime = $event['event_time'] ?? 'Not set';
-                        $formattedTime = '';
-
-                        if (is_numeric($eventTime)) {
-                            $dt = new \DateTime();
-                            $dt->setTimestamp($eventTime);
-                            $dt->setTimezone(new \DateTimeZone('UTC'));
-                            $formattedTime = ' (' . $dt->format('Y-m-d H:i:s') . ' UTC)';
-                        }
-
-                        $timestampInfo .= "\n  Event #{$index} [{$eventName}]: {$eventTime}{$formattedTime}";
-                    }
-                    $errorDetails .= $timestampInfo;
                 }
 
                 $this->logger->error("Meta API Error{$errorType}{$errorCode}: {$errorMessage}{$errorDetails}");
