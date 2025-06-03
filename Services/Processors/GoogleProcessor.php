@@ -47,6 +47,7 @@ class GoogleProcessor
         $customerId = $settings->googleAdsLoginCustomerId->getValue();
         $accessToken = $this->googleAuthService->getAccessToken($settings);
         $apiVersion = $settings->googleAdsApiVersion->getValue();
+        $developerToken = $settings->googleAdsDeveloperToken->getValue();
 
         if (empty($customerId) || empty($accessToken)) {
             throw new MissingConfigurationException('Google Ads', ['Customer ID', 'Access Token']);
@@ -69,11 +70,10 @@ class GoogleProcessor
         }
 
         try {
-            $response = $this->uploadConversionAdjustments($conversionAdjustments, $customerId, $accessToken, $apiVersion);
+            $response = $this->uploadConversionAdjustments($conversionAdjustments, $customerId, $developerToken, $accessToken, $apiVersion);
             $this->logger->info('GoogleProcessor: Successfully uploaded {count} conversion adjustments for site {idSite}', [
                 'count' => count($conversionAdjustments),
                 'idSite' => $idSite,
-                'jobId' => $response['jobId'] ?? 'unknown'
             ]);
         } catch (\Exception $e) {
             throw new Exception('GoogleProcessor: Failed to process visits for site {idSite}: ' . $e->getMessage(), 0, $e);
@@ -108,34 +108,33 @@ class GoogleProcessor
 
     private function createPageViewAdjustment(string $gclid, array $action, array $userIdentifiers, ?string $userAgent, string $timezone): ?array
     {
-        $gclidDateTimePair = $this->getGclidDateTime($gclid, $action);
-
         // Get page view conversion action from settings
-        $orderId = $action['id'];
-        if (!$orderId) {
+        $eventId = $action['id'];
+        if (!$eventId) {
             $this->logger->warning('GoogleProcessor: No event id found for action');
             return null;
         }
 
-        $adjustmentDateTime = $this->convertToGoogleDateTime($action['timestamp'], $timezone);
-
-        return [
-            'gclidDateTimePair' => $gclidDateTimePair,
-            'adjustmentType' => 'ENHANCEMENT',
-            'userIdentifiers' => $userIdentifiers,
-            'orderId' => $orderId,
+        $adjustmentDateTime = date('Y-m-d H:i:sP');
+        $adjustment = [
+            'orderId' => $eventId,
             'conversionAction' => 'page_view',
+            'adjustmentType' => 'ENHANCEMENT',
             'adjustmentDateTime' => $adjustmentDateTime,
+            'userIdentifiers' => $userIdentifiers,
             'userAgent' => $userAgent
         ];
+        if (!empty($gclid)) {
+            $adjustment['gclidDateTimePair'] = $this->getGclidDateTime($gclid, $action, $timezone);
+        }
+
+        return $adjustment;
     }
 
     private function createEventAdjustment(string $gclid, array $action, array $userIdentifiers, ?string $userAgent, string $timezone, MeasurableSettings $settings): ?array
     {
-        $gclidDateTimePair = $this->getGclidDateTime($gclid, $action);
-
-        $orderId = $action['id'];
-        if (!$orderId) {
+        $eventId = $action['id'];
+        if (!$eventId) {
             $this->logger->warning('GoogleProcessor: No event id found for event with category {eventCategory}', [
                 'eventCategory' => $action['eventCategory'] ?? ''
             ]);
@@ -144,25 +143,28 @@ class GoogleProcessor
 
         // Create EventSettings instance with site settings to get mapping
         $eventSettings = new \Piwik\Plugins\ConversionApi\Settings\EventSettings($settings);
-        $googleConversionAction = $eventSettings->getStandardEventName($action['eventCategory'] ?? '', 'google');
-        if (!$googleConversionAction) {
+        $conversionAction = $eventSettings->getStandardEventName($action['eventCategory'] ?? '', 'google');
+        if (!$conversionAction) {
             $this->logger->info('GoogleProcessor: No Google conversion action mapping found for category {category}', [
                 'category' => $action['eventCategory'] ?? ''
             ]);
             return null;
         }
 
-        $adjustmentDateTime = $this->convertToGoogleDateTime($action['timestamp'], $timezone);
-
-        return [
-            'gclidDateTimePair' => $gclidDateTimePair,
+        $adjustmentDateTime = date('Y-m-d H:i:sP');
+        $adjustment = [
+            'orderId' => $eventId,
+            'conversionAction' => $conversionAction,
             'adjustmentType' => 'ENHANCEMENT',
-            'userIdentifiers' => $userIdentifiers,
-            'orderId' => $orderId,
-            'conversionAction' => $googleConversionAction,
             'adjustmentDateTime' => $adjustmentDateTime,
+            'userIdentifiers' => $userIdentifiers,
             'userAgent' => $userAgent
         ];
+        if (!empty($gclid)) {
+            $adjustment['gclidDateTimePair'] = $this->getGclidDateTime($gclid, $action, $timezone);
+        }
+
+        return $adjustment;
     }
 
     private function getUserIdentifiers(array $visit, MeasurableSettings $settings): array
@@ -204,12 +206,6 @@ class GoogleProcessor
                     'hashedPhoneNumber' => $hashedPhone
                 ];
             }
-            if ($visitorId && strtolower($visitorId) !== 'unknown') {
-                $userIdentifiers[] = [
-                    'userIdentifierSource' => 'FIRST_PARTY',
-                    'thirdPartyUserId' => $visitorId
-                ];
-            }
             // Add address info if available
             if ($hashedFirstName || $hashedLastName || $formattedCity || $formattedRegion || $formattedCountryCode || $formattedZip || $hashedAddressValue) {
                 $addressInfo = [];
@@ -249,26 +245,25 @@ class GoogleProcessor
         return $userIdentifiers;
     }
 
-    private function getGclidDateTime(string $gclid, array $action): array
+    private function getGclidDateTime(string $gclid, array $action, string $timezone): array
     {
         $gclidDateTimePair = [
             'gclid' => $gclid,
-            'conversionDateTime' => $this->convertToGoogleDateTime($action['timestamp'], $action['timezone'] ?? 'UTC')
+            'conversionDateTime' => $this->convertToUtcGoogleDateTime($action['timestamp'], $timezone)
         ];
         return $gclidDateTimePair;
     }
 
-    private function convertToGoogleDateTime(int $timestamp, string $timezone): string
+    private function convertToUtcGoogleDateTime(int $timestamp, string $timezone): string
     {
         $dt = new \DateTime('@' . $timestamp);
         $dateTimeString = $dt->format('Y-m-d H:i:s');
         $localDt = \DateTime::createFromFormat('Y-m-d H:i:s', $dateTimeString, new \DateTimeZone($timezone));
-
-        // Google Ads API expects format: "yyyy-mm-dd hh:mm:ss+|-hh:mm"
+        $localDt->setTimezone(new \DateTimeZone('UTC'));
         return $localDt->format('Y-m-d H:i:sP');
     }
-
-    private function uploadConversionAdjustments(array $adjustments, string $customerId, string $accessToken, string $apiVersion): array
+    
+    private function uploadConversionAdjustments(array $adjustments, string $customerId, string $developerToken, string $accessToken, string $apiVersion): array
     {
         $apiUrl = "https://googleads.googleapis.com/{$apiVersion}/customers/{$customerId}:uploadConversionAdjustments";
 
@@ -285,7 +280,7 @@ class GoogleProcessor
                 'Content-Type: application/json',
                 'Accept: application/json',
                 'Authorization: Bearer ' . $accessToken,
-                'developer-token: ' . $this->getGoogleDeveloperToken()
+                'developer-token: ' . $developerToken
             ],
             'userAgent' => 'ReinMengelberg/ConversionApi Matomo Plugin'
         ];
@@ -344,14 +339,5 @@ class GoogleProcessor
             ]);
             throw new \Exception('Failed to send data to Google Ads API: ' . $e->getMessage());
         }
-    }
-
-    /**
-     * Get Google Developer Token from settings
-     * You'll need to add this to your MeasurableSettings
-     */
-    private function getGoogleDeveloperToken(): string
-    {
-        return $this->settings->googleDeveloperToken->getValue() ?? '';
     }
 }
