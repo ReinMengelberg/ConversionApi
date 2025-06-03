@@ -117,6 +117,8 @@ class ConversionApiManager
         $formattedVisits = $this->visitFormatService->formatVisits($expandedVisits, $settings);
         $hashedVisits = $this->visitHashService->hashVisits($formattedVisits, $settings);
 
+        $this->writeVisitToLogFile($visits[0]);
+
         $this->logger->info('ConversionApi: Expanded, formatted and hashed {count} visits for site {idSite}', ['count' => count($hashedVisits), 'idSite' => $idSite]);
 
         // Process Meta if enabled
@@ -137,21 +139,21 @@ class ConversionApiManager
         }
 
         // Process Google if enabled
-//        try {
-//            if ($settings->googleSyncVisits->getValue() && $this->isGoogleEnabled($settings)) {
-//                $this->processGoogleVisits($idSite, $hashedVisits, $settings);
-//            }
-//        } catch (MissingConfigurationException $e) {
-//            $this->logger->warning('ConversionApi: {message} for site {idSite}. Skipping Google integration.', [
-//                'message' => $e->getMessage(),
-//                'idSite' => $idSite
-//            ]);
-//        } catch (\Exception $e) {
-//            $this->logger->error('ConversionApi: Error processing Google integration for site {idSite}: {message}. Continuing with other integrations.', [
-//                'idSite' => $idSite,
-//                'message' => $e->getMessage()
-//            ]);
-//        }
+        try {
+            if ($settings->googleSyncVisits->getValue() && $this->isGoogleEnabled($settings)) {
+                $this->processGoogleVisits($hashedVisits, $idSite, $timezone, $settings);
+            }
+        } catch (MissingConfigurationException $e) {
+            $this->logger->warning('ConversionApi: {message} for site {idSite}. Skipping Google integration.', [
+                'message' => $e->getMessage(),
+                'idSite' => $idSite
+            ]);
+        } catch (\Exception $e) {
+            $this->logger->error('ConversionApi: Error processing Google integration for site {idSite}: {message}. Continuing with other integrations.', [
+                'idSite' => $idSite,
+                'message' => $e->getMessage()
+            ]);
+        }
 
         // Process LinkedIn if enabled
 //        try {
@@ -190,23 +192,25 @@ class ConversionApiManager
         }
     }
 
-//    /**
-//     * Process and send visits to Google Ads API
-//     * @param int $idSite
-//     * @param array $hashedData
-//     * @param MeasurableSettings $settings
-//     */
-//    private function processGoogleVisits($idSite, $timezone, $settings, $hashedData)
-//    {
-//        try {
-//            $this->logger->info('ConversionApi: Sending visits to Google Ads API for site {idSite}', ['idSite' => $idSite]);
-//            $this->googleProcessor->processVisits($idSite, $timezone, $settings, $hashedData);
-//        } catch (\Exception $e) {
-//            $this->logger->error('ConversionApi: Error sending visits to Google Ads API: {message}', ['message' => $e->getMessage()]);
-//            throw $e;
-//        }
-//    }
-//
+    /**
+     * Process and send visits to Google Ads API
+     * @param array $hashedData
+     * @param int $idSite
+     * @param string $timezone
+     * @param MeasurableSettings $settings
+     * @throws MissingConfigurationException
+     */
+    private function processGoogleVisits(array $hashedData, int $idSite, string $timezone, MeasurableSettings $settings)
+    {
+        try {
+            $this->logger->info('ConversionApi: Sending visits to Google Ads API for site {idSite}', ['idSite' => $idSite]);
+            $this->googleProcessor->processVisits($hashedData, $idSite, $timezone, $settings);
+        } catch (\Exception $e) {
+            $this->logger->error('ConversionApi: Error sending visits to Google Ads API: {message}', ['message' => $e->getMessage()]);
+            throw $e;
+        }
+    }
+
 //    /**
 //     * Process and send visits to LinkedIn Conversions API
 //     *
@@ -281,28 +285,41 @@ class ConversionApiManager
         return true;
     }
 
-    /**
-     * Check if LinkedIn integration is enabled and configured
-     *
-     * @param MeasurableSettings $settings
-     * @return bool
-     * @throws MissingConfigurationException
-     */
-    private function isLinkedinEnabled($settings)
+//    /**
+//     * Check if LinkedIn integration is enabled and configured
+//     *
+//     * @param MeasurableSettings $settings
+//     * @return bool
+//     * @throws MissingConfigurationException
+//     */
+//    private function isLinkedinEnabled($settings)
+//    {
+//        if (!$settings->linkedinSyncVisits->getValue()) {
+//            return false;
+//        }
+//        $missingFields = [];
+//        if (empty($settings->linkedinAccessToken->getValue())) {
+//            $missingFields[] = 'LinkedIn Access Token';
+//        }
+//        if (empty($settings->linkedinAdAccountUrn->getValue())) {
+//            $missingFields[] = 'LinkedIn Ad Account ID';
+//        }
+//        if (!empty($missingFields)) {
+//            throw new MissingConfigurationException('LinkedIn', $missingFields);
+//        }
+//        return true;
+//    }
+
+    private function writeVisitToLogFile($visit)
     {
-        if (!$settings->linkedinSyncVisits->getValue()) {
-            return false;
+        $logFile = PIWIK_DOCUMENT_ROOT . '/plugins/ConversionApi/tmp/visit_log.json';
+        $jsonData = json_encode($visit, JSON_PRETTY_PRINT);
+
+        $this->logger->info('ConversionApi: Writing visit to log file: {logFile}', ['logFile' => $logFile]);
+
+        if (!is_dir(dirname($logFile))) {
+            mkdir(dirname($logFile), 0755, true);
         }
-        $missingFields = [];
-        if (empty($settings->linkedinAccessToken->getValue())) {
-            $missingFields[] = 'LinkedIn Access Token';
-        }
-        if (empty($settings->linkedinAdAccountUrn->getValue())) {
-            $missingFields[] = 'LinkedIn Ad Account ID';
-        }
-        if (!empty($missingFields)) {
-            throw new MissingConfigurationException('LinkedIn', $missingFields);
-        }
-        return true;
+        file_put_contents($logFile, $jsonData . PHP_EOL);
     }
 }
