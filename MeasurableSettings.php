@@ -55,6 +55,7 @@ class MeasurableSettings extends \Piwik\Settings\Measurable\MeasurableSettings
     public $eventIdSource;
     public $eventIdCustomDimension;
     public $eventCategories = [];
+    public $googleActions = [];
 
     /**
      * ConsentSettings
