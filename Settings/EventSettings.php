@@ -29,8 +29,8 @@ class EventSettings
         'applicant' => 'SubmitApplication'
     ];
 
-    /** @var array Standard event mappings for LinkedIn - these are hardcoded */
-    private $linkedinEventTypes = [
+    /** @var array Google Conversion Event types that can be configured */
+    private $linkedinConversionEventTypes = [
         'action' => 'key_page_view',
         'lead' => 'lead',
         'account' => 'sign_up',
@@ -38,8 +38,8 @@ class EventSettings
         'applicant' => 'apply_job',
     ];
 
-    /** @var array Google action types that can be configured */
-    private $googleActionTypes = [
+    /** @var array Google Conversion Action types that can be configured */
+    private $googleConversionActionTypes = [
         'action' => 'Page View',
         'lead' => 'Generate Lead',
         'account' => 'Sign Up',
@@ -69,6 +69,9 @@ class EventSettings
 
         // Initialize Google conversion action settings
         $this->initGoogleActionSettings();
+
+        // Initialize Google conversion action settings
+        $this->initLinkedinEventSettings();
     }
 
     /**
@@ -91,8 +94,20 @@ class EventSettings
     {
         $this->settings->googleActions = [];
 
-        foreach ($this->googleActionTypes as $actionType => $title) {
+        foreach ($this->googleConversionActionTypes as $actionType => $title) {
             $this->settings->googleActions[$actionType] = $this->createGoogleActionSetting($actionType, $title);
+        }
+    }
+
+    /**
+     * Initialize LinkedIn conversion action settings
+     */
+    private function initLinkedinEventSettings()
+    {
+        $this->settings->linkedinEvents = [];
+
+        foreach ($this->linkedinConversionEventTypes as $eventType => $title) {
+            $this->settings->linkedinEvents[$eventType] = $this->createLinkedinEventSetting($eventType, $title);
         }
     }
 
@@ -117,6 +132,33 @@ class EventSettings
                 $field->validate = function ($value) {
                     if (!empty($value) && !preg_match('/^\d+$/', $value)) {
                         throw new \Exception('Invalid Google conversion action ID. Expected numeric ID only (e.g., 987654321)');
+                    }
+                };
+            }
+        );
+    }
+
+    /**
+     * Create a setting for a specific Google conversion action
+     *
+     * @param string $actionType Google action type (action, lead, account, etc.)
+     * @param string $title Human-readable title
+     * @return Setting
+     */
+    private function createLinkedinEventSetting($actionType, $title)
+    {
+        return $this->settings->createSetting(
+            'linkedin_event_' . $actionType,
+            '', // Default empty
+            FieldConfig::TYPE_STRING,
+            function (FieldConfig $field) use ($title) {
+                $field->title = $title . ' Conversion Action ID';
+                $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
+                $field->description = 'LinkedIn Ads Conversion ID only';
+                $field->inlineHelp = 'Example: 987654321 (we\'ll use your partner ID from API settings)';
+                $field->validate = function ($value) {
+                    if (!empty($value) && !preg_match('/^\d+$/', $value)) {
+                        throw new \Exception('Invalid LinkedIn Conversion ID. Expected numeric ID only (e.g., 987654321)');
                     }
                 };
             }
@@ -300,20 +342,26 @@ class EventSettings
      * @param string $eventCategory Matomo event category or 'action' for pageviews
      * @return string|null LinkedIn event type or null if not found
      */
-    public function getLinkedInEventType(string $eventCategory): ?string
+    public function getLinkedinConversionId(string $eventCategory): ?string
     {
         // Handle pageview/action directly
         if ($eventCategory === 'action') {
-            return $this->linkedinEventTypes['action'] ?? null;
+            if (isset($this->settings->linkedinEvents['action'])) {
+                $value = $this->settings->linkedinEvents['action']->getValue();
+                return !empty($value) ? $value : null;
+            }
+            return null;
         }
-
         // Find which standard event type this Matomo category corresponds to
         foreach ($this->settings->eventCategories as $eventType => $setting) {
             if ($setting->getValue() === $eventCategory) {
-                return $this->linkedinEventTypes[$eventType] ?? null;
+                if (isset($this->settings->linkedinEvents[$eventType])) {
+                    $value = $this->settings->linkedinEvents[$eventType]->getValue();
+                    return !empty($value) ? $value : null;
+                }
+                return null;
             }
         }
-
         return null;
     }
 

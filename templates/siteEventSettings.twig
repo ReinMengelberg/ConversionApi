@@ -113,7 +113,7 @@
                             <div class="form-table-cell">Matomo Action</div>
                             <div class="form-table-cell">Google Conversion Action ID</div>
                             <div class="form-table-cell">Meta Event Name</div>
-                            <div class="form-table-cell">LinkedIn Event Type</div>
+                            <div class="form-table-cell">LinkedIn Conversion ID</div>
                         </div>
 
                         <div id="mappings-container">
@@ -125,7 +125,7 @@
                                 <div class="form-table-cell" data-label="Matomo Action">
                                     <div class="platform-event-name">action</div>
                                 </div>
-                                <div class="form-table-cell" data-label="Google Conversion Action">
+                                <div class="form-table-cell" data-label="Google Conversion Action ID">
                                     <input type="text"
                                            name="googleActions[action]"
                                            class="form-control google-action-input"
@@ -135,8 +135,12 @@
                                 <div class="form-table-cell" data-label="Meta Event Name">
                                     <div class="platform-event-name">ViewContent</div>
                                 </div>
-                                <div class="form-table-cell" data-label="LinkedIn Event Type">
-                                    <div class="platform-event-name">key_page_view</div>
+                                <div class="form-table-cell" data-label="LinkedIn Conversion ID">
+                                    <input type="text"
+                                           name="linkedinEvents[action]"
+                                           class="form-control linkedin-event-input"
+                                           value="{{ settings.linkedinEvents.action.getValue() }}"
+                                           placeholder="987654321" />
                                 </div>
                             </div>
                         </div>
@@ -172,7 +176,7 @@
                             <div class="form-table-cell">Matomo Event Category</div>
                             <div class="form-table-cell">Google Conversion Action ID</div>
                             <div class="form-table-cell">Meta Event Name</div>
-                            <div class="form-table-cell">LinkedIn Event Type</div>
+                            <div class="form-table-cell">LinkedIn Conversion ID</div>
                         </div>
 
                         <div id="mappings-container">
@@ -198,8 +202,12 @@
                                 <div class="form-table-cell" data-label="Meta Event Name">
                                     <div class="platform-event-name">Lead</div>
                                 </div>
-                                <div class="form-table-cell" data-label="LinkedIn Event Type">
-                                    <div class="platform-event-name">lead</div>
+                                <div class="form-table-cell" data-label="LinkedIn Conversion ID">
+                                    <input type="text"
+                                           name="linkedinEvents[lead]"
+                                           class="form-control linkedin-event-input"
+                                           value="{{ settings.linkedinEvents.lead.getValue() }}"
+                                           placeholder="987654321" />
                                 </div>
                             </div>
 
@@ -225,8 +233,12 @@
                                 <div class="form-table-cell" data-label="Meta Event Name">
                                     <div class="platform-event-name">CompleteRegistration</div>
                                 </div>
-                                <div class="form-table-cell" data-label="LinkedIn Event Type">
-                                    <div class="platform-event-name">sign_up</div>
+                                <div class="form-table-cell" data-label="LinkedIn Conversion ID">
+                                    <input type="text"
+                                           name="linkedinEvents[account]"
+                                           class="form-control linkedin-event-input"
+                                           value="{{ settings.linkedinEvents.account.getValue() }}"
+                                           placeholder="987654321" />
                                 </div>
                             </div>
 
@@ -252,8 +264,12 @@
                                 <div class="form-table-cell" data-label="Meta Event Name">
                                     <div class="platform-event-name">Schedule</div>
                                 </div>
-                                <div class="form-table-cell" data-label="LinkedIn Event Type">
-                                    <div class="platform-event-name">book_appointment</div>
+                                <div class="form-table-cell" data-label="LinkedIn Conversion ID">
+                                    <input type="text"
+                                           name="linkedinEvents[appointment]"
+                                           class="form-control linkedin-event-input"
+                                           value="{{ settings.linkedinEvents.appointment.getValue() }}"
+                                           placeholder="987654321" />
                                 </div>
                             </div>
 
@@ -279,8 +295,12 @@
                                 <div class="form-table-cell" data-label="Meta Event Name">
                                     <div class="platform-event-name">SubmitApplication</div>
                                 </div>
-                                <div class="form-table-cell" data-label="LinkedIn Event Type">
-                                    <div class="platform-event-name">apply_job</div>
+                                <div class="form-table-cell" data-label="LinkedIn Conversion ID">
+                                    <input type="text"
+                                           name="linkedinEvents[applicant]"
+                                           class="form-control linkedin-event-input"
+                                           value="{{ settings.linkedinEvents.applicant.getValue() }}"
+                                           placeholder="987654321" />
                                 </div>
                             </div>
                         </div>
@@ -578,6 +598,21 @@
             display: inline-block;
         }
 
+        .platform-event-name-label {
+            margin-top: 5px;
+            padding: 4px 8px;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.85em;
+            color: #666;
+            display: inline-block;
+        }
+
+        .linkedin-event-input {
+            margin-bottom: 3px;
+        }
+
         /* Helper Section */
         .form-table-helper {
             margin-top: 30px;
@@ -730,7 +765,7 @@
                     $(this).find('.form-table-cell').eq(0).attr('data-label', 'Matomo Event Category');
                     $(this).find('.form-table-cell').eq(1).attr('data-label', 'Google Conversion Action');
                     $(this).find('.form-table-cell').eq(2).attr('data-label', 'Meta Event Name');
-                    $(this).find('.form-table-cell').eq(3).attr('data-label', 'LinkedIn Event Type');
+                    $(this).find('.form-table-cell').eq(3).attr('data-label', 'LinkedIn Conversion ID');
                 });
             }
 

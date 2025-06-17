@@ -317,6 +317,23 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
             }
         }
 
+        // Process LinkedIn conversion IDs for all standard event types (including action/pageview)
+        $linkedinEvents = Common::getRequestVar('linkedinEvents', [], 'array');
+
+        // Update each LinkedIn event setting with validation
+        foreach ($linkedinEvents as $eventType => $conversionId) {
+            if (isset($settings->linkedinEvents[$eventType])) {
+                $trimmedValue = trim($conversionId);
+
+                // Validate format: should be numeric only (if not empty)
+                if (!empty($trimmedValue) && !preg_match('/^\d+$/', $trimmedValue)) {
+                    throw new \Exception("Invalid LinkedIn conversion ID for {$eventType}. Expected numeric ID only (e.g., 987654321)");
+                }
+
+                $settings->linkedinEvents[$eventType]->setValue($trimmedValue);
+            }
+        }
+
         // Process Event ID settings
         $eventIdSource = Common::getRequestVar('event_id_source', 'event_name', 'string');
         $settings->eventIdSource->setValue($eventIdSource);

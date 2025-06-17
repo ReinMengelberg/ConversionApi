@@ -154,21 +154,21 @@ class ConversionApiManager
         }
 
         // Process LinkedIn if enabled
-//        try {
-//            if ($settings->linkedinSyncVisits->getValue() && $this->isLinkedinEnabled($settings)) {
-//                $this->processLinkedinVisits($idSite, $hashedVisits, $settings);
-//            }
-//        } catch (MissingConfigurationException $e) {
-//            $this->logger->warning('ConversionApi: {message} for site {idSite}. Skipping LinkedIn integration.', [
-//                'message' => $e->getMessage(),
-//                'idSite' => $idSite
-//            ]);
-//        } catch (\Exception $e) {
-//            $this->logger->error('ConversionApi: Error processing LinkedIn integration for site {idSite}: {message}. Continuing with other integrations.', [
-//                'idSite' => $idSite,
-//                'message' => $e->getMessage()
-//            ]);
-//        }
+        try {
+            if ($settings->linkedinSyncVisits->getValue() && $this->isLinkedinEnabled($settings)) {
+                $this->processLinkedinVisits($hashedVisits, $idSite, $timezone, $settings);
+            }
+        } catch (MissingConfigurationException $e) {
+            $this->logger->warning('ConversionApi: {message} for site {idSite}. Skipping LinkedIn integration.', [
+                'message' => $e->getMessage(),
+                'idSite' => $idSite
+            ]);
+        } catch (\Exception $e) {
+            $this->logger->error('ConversionApi: Error processing LinkedIn integration for site {idSite}: {message}. Continuing with other integrations.', [
+                'idSite' => $idSite,
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -209,23 +209,23 @@ class ConversionApiManager
         }
     }
 
-//    /**
-//     * Process and send visits to LinkedIn Conversions API
-//     *
-//     * @param int $idSite
-//     * @param array $hashedData
-//     * @param MeasurableSettings $settings
-//     */
-//    private function processLinkedinVisits($idSite, $timezone, $settings, $hashedData)
-//    {
-//        try {
-//            $this->logger->info('ConversionApi: Sending visits to LinkedIn Conversions API for site {idSite}', ['idSite' => $idSite]);
-//            $this->linkedinProcessor->processVisits($idSite, $timezone, $settings, $hashedData);
-//        } catch (\Exception $e) {
-//            $this->logger->error('ConversionApi: Error sending visits to LinkedIn Conversions API: {message}', ['message' => $e->getMessage()]);
-//            throw $e;
-//        }
-//    }
+    /**
+     * Process and send visits to LinkedIn Conversions API
+     *
+     * @param int $idSite
+     * @param array $hashedData
+     * @param MeasurableSettings $settings
+     */
+    private function processLinkedinVisits(array $hashedData, int $idSite, string $timezone, MeasurableSettings $settings)
+    {
+        try {
+            $this->logger->info('ConversionApi: Sending visits to LinkedIn Conversions API for site {idSite}', ['idSite' => $idSite]);
+            $this->linkedinProcessor->processVisits($hashedData, $idSite, $timezone, $settings);
+        } catch (\Exception $e) {
+            $this->logger->error('ConversionApi: Error sending visits to LinkedIn Conversions API: {message}', ['message' => $e->getMessage()]);
+            throw $e;
+        }
+    }
 
     /**
      * Check if Meta integration is enabled and configured
@@ -234,7 +234,7 @@ class ConversionApiManager
      * @return bool
      * @throws MissingConfigurationException
      */
-    private function isMetaEnabled($settings)
+    private function isMetaEnabled($settings): bool
     {
         if (!$settings->metaSyncVisits->getValue()) {
             return false;
@@ -259,7 +259,7 @@ class ConversionApiManager
      * @return bool
      * @throws MissingConfigurationException
      */
-    private function isGoogleEnabled($settings)
+    private function isGoogleEnabled($settings): bool
     {
         if (!$settings->googleSyncVisits->getValue()) {
             return false;
@@ -283,30 +283,30 @@ class ConversionApiManager
         return true;
     }
 
-//    /**
-//     * Check if LinkedIn integration is enabled and configured
-//     *
-//     * @param MeasurableSettings $settings
-//     * @return bool
-//     * @throws MissingConfigurationException
-//     */
-//    private function isLinkedinEnabled($settings)
-//    {
-//        if (!$settings->linkedinSyncVisits->getValue()) {
-//            return false;
-//        }
-//        $missingFields = [];
-//        if (empty($settings->linkedinAccessToken->getValue())) {
-//            $missingFields[] = 'LinkedIn Access Token';
-//        }
-//        if (empty($settings->linkedinAdAccountUrn->getValue())) {
-//            $missingFields[] = 'LinkedIn Ad Account ID';
-//        }
-//        if (!empty($missingFields)) {
-//            throw new MissingConfigurationException('LinkedIn', $missingFields);
-//        }
-//        return true;
-//    }
+    /**
+     * Check if LinkedIn integration is enabled and configured
+     *
+     * @param MeasurableSettings $settings
+     * @return bool
+     * @throws MissingConfigurationException
+     */
+    private function isLinkedinEnabled($settings)
+    {
+        if (!$settings->linkedinSyncVisits->getValue()) {
+            return false;
+        }
+        $missingFields = [];
+        if (empty($settings->linkedinAccessToken->getValue())) {
+            $missingFields[] = 'LinkedIn Access Token';
+        }
+        if (empty($settings->linkedinAdAccountUrn->getValue())) {
+            $missingFields[] = 'LinkedIn Ad Account ID';
+        }
+        if (!empty($missingFields)) {
+            throw new MissingConfigurationException('LinkedIn', $missingFields);
+        }
+        return true;
+    }
 
 //    private function writeVisitToLogFile($visit)
 //    {
