@@ -152,13 +152,13 @@ class EventSettings
             '', // Default empty
             FieldConfig::TYPE_STRING,
             function (FieldConfig $field) use ($title) {
-                $field->title = $title . ' Conversion Action ID';
+                $field->title = $title . ' Conversion Rule ID';
                 $field->uiControl = FieldConfig::UI_CONTROL_TEXT;
-                $field->description = 'LinkedIn Ads Conversion ID only';
-                $field->inlineHelp = 'Example: 987654321 (we\'ll use your partner ID from API settings)';
+                $field->description = 'LinkedIn Ads Conversion Rule ID';
+                $field->inlineHelp = 'Example: urn:lla:llaPartnerConversion:123456';
                 $field->validate = function ($value) {
-                    if (!empty($value) && !preg_match('/^\d+$/', $value)) {
-                        throw new \Exception('Invalid LinkedIn Conversion ID. Expected numeric ID only (e.g., 987654321)');
+                    if (!empty($value) && !preg_match('/^urn:lla:llaPartnerConversion:\d+$/', $value)) {
+                        throw new \Exception('Invalid LinkedIn Conversion Rule ID. Expected URN format (e.g., urn:lla:llaPartnerConversion:123456)');
                     }
                 };
             }

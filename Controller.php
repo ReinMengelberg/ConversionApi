@@ -325,9 +325,9 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
             if (isset($settings->linkedinEvents[$eventType])) {
                 $trimmedValue = trim($conversionId);
 
-                // Validate format: should be numeric only (if not empty)
-                if (!empty($trimmedValue) && !preg_match('/^\d+$/', $trimmedValue)) {
-                    throw new \Exception("Invalid LinkedIn conversion ID for {$eventType}. Expected numeric ID only (e.g., 987654321)");
+                // Validate format: should be URN format (if not empty)
+                if (!empty($trimmedValue) && !preg_match('/^urn:lla:llaPartnerConversion:\d+$/', $trimmedValue)) {
+                    throw new \Exception("Invalid LinkedIn conversion rule ID for {$eventType}. Expected URN format (e.g., urn:lla:llaPartnerConversion:123456)");
                 }
 
                 $settings->linkedinEvents[$eventType]->setValue($trimmedValue);
